@@ -1,0 +1,11 @@
+--1BEF0A57BE110FD467A
+Content-Disposition: form-data; name="news_header"
+
+Пример новости
+--1BEF0A57BE110FD467A
+Content-Disposition: form-data;name="news_file";filename="news.txt"
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: binary
+
+А вот такая новость, которая лежит в файле news.txt
+--1BEF0A57BE110FD467A--
