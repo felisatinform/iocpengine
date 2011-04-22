@@ -2,8 +2,8 @@ object FrmTest: TFrmTest
   Left = 0
   Top = 0
   Caption = 'Msg test'
-  ClientHeight = 208
-  ClientWidth = 273
+  ClientHeight = 335
+  ClientWidth = 335
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,8 +15,8 @@ object FrmTest: TFrmTest
   PixelsPerInch = 96
   TextHeight = 13
   object BtServer: TButton
-    Left = 32
-    Top = 32
+    Left = 8
+    Top = 8
     Width = 75
     Height = 25
     Caption = 'Start server'
@@ -24,36 +24,31 @@ object FrmTest: TFrmTest
     OnClick = BtServerClick
   end
   object BtClient: TButton
-    Left = 152
-    Top = 32
+    Left = 251
+    Top = 8
     Width = 75
     Height = 25
     Caption = 'Start client'
     TabOrder = 1
     OnClick = BtClientClick
   end
-  object BtConnect: TButton
-    Left = 152
-    Top = 72
-    Width = 75
-    Height = 25
-    Caption = 'Connect'
+  object MmLog: TMemo
+    Left = 8
+    Top = 39
+    Width = 318
+    Height = 288
     TabOrder = 2
-    OnClick = BtConnectClick
-  end
-  object BtDisconnect: TButton
-    Left = 152
-    Top = 112
-    Width = 75
-    Height = 25
-    Caption = 'Disconnect'
-    TabOrder = 3
-    OnClick = BtDisconnectClick
   end
   object TmrClient: TTimer
     Interval = 20
     OnTimer = TmrClientTimer
-    Left = 32
-    Top = 112
+    Left = 200
+    Top = 80
+  end
+  object TmrSend: TTimer
+    Interval = 20
+    OnTimer = TmrSendTimer
+    Left = 72
+    Top = 104
   end
 end
