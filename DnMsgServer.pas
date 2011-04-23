@@ -270,14 +270,16 @@ end;
 
 procedure TCommonMsgServer.Close;
 begin
+
   if FListener = Nil then
     Exit;
-
   FShutdown := True;
 
   if FListener.Active then
     FListener.Active := False;
   FListener.WaitForShutdown;
+
+  DisconnectAll;
 
   //stop requestor - new requests will be ignored or exceptions raised
   FRequestor.Active := False;

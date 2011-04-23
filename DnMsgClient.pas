@@ -343,7 +343,7 @@ type
 {$ENDIF}
     procedure InternalExecute;
     procedure InternalFinish;
-    procedure SocketEventSelect;
+    procedure BindSocketToEvents;
 
   public
     constructor Create(Client: TCommonMsgClient);
@@ -973,7 +973,7 @@ begin
     FStreamInfo := FClient.PopStreamForSending;
 
     // Prepare receive FD_WRITE notifications
-    SocketEventSelect();
+    BindSocketToEvents();
 
     // Continue
     Exit;
@@ -1032,7 +1032,7 @@ begin
   FreeOnTerminate := True;
 end;
 
-procedure TCommonMsgClientHandler.SocketEventSelect;
+procedure TCommonMsgClientHandler.BindSocketToEvents;
 begin
   if Assigned(FStreamInfo) and not FCanWrite then
     WSAEventSelect(FClient.FSocket, FClient.FSocketSignal.Handle, FD_READ + FD_WRITE + FD_CLOSE)
@@ -1123,7 +1123,7 @@ begin
   end
   else
   begin
-    SocketEventSelect();
+    BindSocketToEvents();
     GetMem(FTempStorage, ClientTempStorageSize);
     GetMem(FWriteTempStorage, ClientTempStorageSize);
     GetMem(FHeaderData, sizeof(TMsgHeader));
@@ -1153,7 +1153,12 @@ begin
   FClient.DestroySocket;
   if FConnected then
     FClient.PostClientDisconnect;
+
+  // Not connected anymore
   FConnected := False;
+
+  // Finish the thread
+  Terminate;
 end;
 
 procedure TCommonMsgClientHandler.HandleDisconnect(Signaled: Boolean);
@@ -1223,7 +1228,7 @@ begin
   if FStreamInfo = Nil then
   begin
     // Unsubscribe from FD_WRITE
-    SocketEventSelect();
+    BindSocketToEvents();
 
     // And exit
     Exit;
@@ -1257,7 +1262,7 @@ begin
         FCanWrite := False;
 
       // Bind to FD_WRITE
-      SocketEventSelect();
+      BindSocketToEvents();
     end;
   end;
 
@@ -1280,12 +1285,12 @@ begin
         // Post event 'stream sent'
         FClient.PostStreamSent(FStreamInfo);
         FStreamInfo := Nil;
-        SocketEventSelect();
+        BindSocketToEvents();
       end else
       begin
         FClient.DeleteStream(FStreamInfo);
         FStreamInfo := Nil;
-        SocketEventSelect();
+        BindSocketToEvents();
       end;
     end
     else

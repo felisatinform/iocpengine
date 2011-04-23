@@ -4,15 +4,15 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Contnrs, DnMsgClient, DnMsgServer, ExtCtrls;
+  Dialogs, StdCtrls, Contnrs, DnMsgClient, DnMsgServer, ExtCtrls, SyncObjs;
 
 type
   TFrmTest = class(TForm)
     BtServer: TButton;
     BtClient: TButton;
-    TmrClient: TTimer;
     MmLog: TMemo;
     TmrSend: TTimer;
+    TmrLog: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure BtServerClick(Sender: TObject);
     procedure BtClientClick(Sender: TObject);
@@ -20,9 +20,12 @@ type
     procedure BtDisconnectClick(Sender: TObject);
     procedure TmrClientTimer(Sender: TObject);
     procedure TmrSendTimer(Sender: TObject);
+    procedure TmrLogTimer(Sender: TObject);
   private
     FServer: TCommonMsgServer;
     FClient: TCommonMsgClient;
+    FLog: TStringList;
+    FLogGuard: TCriticalSection;
 
     procedure LogServer(const S: String);
     procedure LogClient(const S: String);
@@ -56,6 +59,9 @@ implementation
 
 procedure TFrmTest.FormCreate(Sender: TObject);
 begin
+  FLog := TStringList.Create(True);
+  FLogGuard := TCriticalSection.Create();
+
   FClient := TCommonMsgClient.Create(Nil);
   FServer := TCommonMsgServer.Create(Nil);
   FClient.HeartbeatInterval := 20;
@@ -70,7 +76,7 @@ begin
   FClient.OnStreamSent := Self.Client_StreamSent;
   FClient.OnAuthResult := Self.Client_AuthResult;
   FClient.OnClientList := Self.Client_ListOfClients;
-  FClient.MarshallWindow := Self.Handle;
+  //FClient.MarshallWindow := Self.Handle;
 
   FServer.Port := 8083;
   FServer.OnClientConnected := Self.Server_ClientConnected;
@@ -85,7 +91,7 @@ procedure TFrmTest.LogServer(const S: String);
 var Msg: String;
 begin
   Msg := 'Server: ' + S;
-  MmLog.Lines.Add('Server: ' + S);
+  FLog.Add(Msg);
   OutputDebugString(PWideChar(Msg));
 end;
 
@@ -93,7 +99,7 @@ procedure TFrmTest.LogClient(const S: String);
 var Msg: String;
 begin
   Msg := 'Client: ' + S;
-  MmLog.Lines.Add(Msg);
+  FLog.Add(Msg);
   OutputDebugString(PWideChar(Msg));
 end;
 
@@ -106,14 +112,14 @@ procedure TFrmTest.Server_ClientAuthentication (Sender: TObject; ClientRec: TCli
 begin
   LogServer('client authenticated');
   Authenticated := True;
-  FServer.SendString('test', ClientRec);
+  //FServer.SendString('test', ClientRec);
 end;
 
 procedure TFrmTest.Server_DataReceived (Sender: TObject; ClientRec: TClientRec; Stream: TStream);
 begin
-  LogServer('received ' + IntToStr(Stream.Size) + ' bytes');
+  //LogServer('received ' + IntToStr(Stream.Size) + ' bytes');
   Stream.Position := 0;
-  FServer.SendString('TTTTTTTTTTTTT', ClientRec);
+  //FServer.SendString('TTTTTTTTTTTTT', ClientRec);
 end;
 
 procedure TFrmTest.Server_ClientDisconnectedEvent (Sender: TObject; ClientRec: TClientRec);
@@ -128,7 +134,7 @@ end;
 
 procedure TFrmTest.Server_StreamSent (Sender: TObject; Client: TClientRec; Stream: TStream);
 begin
-  LogServer('sent ' + IntToStr(Stream.Size) + ' bytes');
+  // LogServer('sent ' + IntToStr(Stream.Size) + ' bytes');
 end;
 
 procedure TFrmTest.TmrClientTimer(Sender: TObject);
@@ -137,9 +143,31 @@ begin
   // FClient.SendString('TESTTESTTESTTESTTESTTESTTESTTESTESTTEST');
 end;
 
+procedure TFrmTest.TmrLogTimer(Sender: TObject);
+begin
+  FLogGuard.Enter;
+  try
+    MmLog.Lines.AddStrings(FLog);
+    FLog.Clear;
+  finally
+    FLogGuard.Leave;
+  end;
+
+  if Assigned(FClient) then
+  begin
+    if FClient.MarshallWindow <> 0 then
+      FClient.ProcessEvents;
+
+    if FClient.Active then
+      BtClient.Caption := 'Stop'
+    else
+      BtClient.Caption := 'Start';
+  end;
+end;
+
 procedure TFrmTest.TmrSendTimer(Sender: TObject);
 begin
-  FClient.SendString('TESTESTESTESTESTESTESTESTESTESTESTESTESTEST');
+  //FClient.SendString('TESTESTESTESTESTESTESTESTESTESTESTESTESTEST');
 end;
 
 procedure TFrmTest.Client_Connected (Sender: TObject);
@@ -159,12 +187,12 @@ end;
 
 procedure TFrmTest.Client_DataReceived (Sender: TObject; Stream: TStream);
 begin
-  LogClient('received ' + IntToStr(Stream.Size) + ' bytes.');
+  // LogClient('received ' + IntToStr(Stream.Size) + ' bytes.');
 end;
 
 procedure TFrmTest.Client_StreamSent (Sender: TObject; Stream: TStream);
 begin
-  LogClient('sent ' + IntToStr(Stream.Size) + ' bytes.');
+  // LogClient('sent ' + IntToStr(Stream.Size) + ' bytes.');
 end;
 
 procedure TFrmTest.BtClientClick(Sender: TObject);
@@ -173,14 +201,11 @@ begin
   begin
     TmrSend.Enabled := False;
     FClient.Active := False;
-
-    //TmrClient.Enabled := False;
     BtClient.Caption := 'Start client';
   end
   else
   begin
     FClient.Active := True;
-    TmrClient.Enabled := True;
     TmrSend.Enabled := True;
     BtClient.Caption := 'Stop client';
   end;
@@ -197,6 +222,8 @@ begin
 end;
 
 procedure TFrmTest.BtServerClick(Sender: TObject);
+var
+  I: Integer;
 begin
   if FServer.Active then
   begin

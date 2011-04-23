@@ -37,18 +37,19 @@ object FrmTest: TFrmTest
     Top = 39
     Width = 318
     Height = 288
+    ScrollBars = ssVertical
     TabOrder = 2
-  end
-  object TmrClient: TTimer
-    Interval = 20
-    OnTimer = TmrClientTimer
-    Left = 200
-    Top = 80
   end
   object TmrSend: TTimer
     Interval = 20
     OnTimer = TmrSendTimer
     Left = 72
     Top = 104
+  end
+  object TmrLog: TTimer
+    Interval = 20
+    OnTimer = TmrLogTimer
+    Left = 248
+    Top = 216
   end
 end
