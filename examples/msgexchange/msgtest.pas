@@ -18,9 +18,9 @@ type
     procedure BtClientClick(Sender: TObject);
     procedure BtConnectClick(Sender: TObject);
     procedure BtDisconnectClick(Sender: TObject);
-    procedure TmrClientTimer(Sender: TObject);
     procedure TmrSendTimer(Sender: TObject);
     procedure TmrLogTimer(Sender: TObject);
+
   private
     FServer: TCommonMsgServer;
     FClient: TCommonMsgClient;
@@ -117,9 +117,9 @@ end;
 
 procedure TFrmTest.Server_DataReceived (Sender: TObject; ClientRec: TClientRec; Stream: TStream);
 begin
-  //LogServer('received ' + IntToStr(Stream.Size) + ' bytes');
+  LogServer('received ' + IntToStr(Stream.Size) + ' bytes');
   Stream.Position := 0;
-  //FServer.SendString('TTTTTTTTTTTTT', ClientRec);
+  FServer.SendString('TTTTTTTTTTTTT', ClientRec);
 end;
 
 procedure TFrmTest.Server_ClientDisconnectedEvent (Sender: TObject; ClientRec: TClientRec);
@@ -134,13 +134,7 @@ end;
 
 procedure TFrmTest.Server_StreamSent (Sender: TObject; Client: TClientRec; Stream: TStream);
 begin
-  // LogServer('sent ' + IntToStr(Stream.Size) + ' bytes');
-end;
-
-procedure TFrmTest.TmrClientTimer(Sender: TObject);
-begin
-  FClient.ProcessEvents;
-  // FClient.SendString('TESTTESTTESTTESTTESTTESTTESTTESTESTTEST');
+  LogServer('sent ' + IntToStr(Stream.Size) + ' bytes');
 end;
 
 procedure TFrmTest.TmrLogTimer(Sender: TObject);
@@ -167,7 +161,7 @@ end;
 
 procedure TFrmTest.TmrSendTimer(Sender: TObject);
 begin
-  //FClient.SendString('TESTESTESTESTESTESTESTESTESTESTESTESTESTEST');
+  FClient.SendString('TESTESTESTESTESTESTESTESTESTESTESTESTESTEST');
 end;
 
 procedure TFrmTest.Client_Connected (Sender: TObject);
