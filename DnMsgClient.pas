@@ -438,7 +438,7 @@ begin
   FreeAndNil(FEventList);
   FreeAndNil(FClientListArrived);
   FreeAndNil(FThreadFinished);
-  FreeAndNil(FDataSignal);
+  Windows.CloseHandle(FDataSignal);
   FreeAndNil(FSocketSignal);
   FreeAndNil(FStreamList);
   FreeAndNil(FGuard);
