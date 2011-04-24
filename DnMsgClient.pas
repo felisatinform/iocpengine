@@ -98,7 +98,7 @@ type
     FMarshallWindow: HWND;
     FMarshallMsg: Integer;
     FEventList: TObjectList;
-    FDataSignal: TSemaphore;
+    FDataSignal: THandle;
 
     procedure InternalConnect;
     procedure SetActive(AValue: Boolean);
@@ -455,7 +455,7 @@ begin
 
   FGuard := TCriticalSection.Create;
   FStreamList := TObjectList.Create(False);
-  FDataSignal := TSemaphore.Create(Nil, 0, $FFFFFF, '');
+  FDataSignal := Windows.CreateSemaphore(Nil, 0, $7FFFFFFF, Nil);
   FThreadFinished := TEvent.Create(Nil, False, False, '');
   FClientListArrived := TEvent.Create(Nil, False, False, '');
   FEventList := TObjectList.Create(True);
@@ -571,7 +571,7 @@ begin
   FGuard.Enter;
   try
     FStreamList.Add(TStreamInfo.Create(AStream, 0));
-    FDataSignal.Release;
+    ReleaseSemaphore(FDataSignal, 1, Nil);
   finally
     FGuard.Leave;
   end;
@@ -586,7 +586,7 @@ begin
   FGuard.Enter;
   try
     FStreamList.Add(TStreamInfo.Create(MS, AType));
-    FDataSignal.Release;
+    ReleaseSemaphore(FDataSignal, 1, Nil);
   finally
     FGuard.Leave;
   end;
@@ -927,7 +927,7 @@ begin
 
   SignalArray[0] := FClient.FSocketSignal.Handle;
   SignalArray[1] := FStopSignal.Handle;
-  SignalArray[2] := FClient.FDataSignal.Handle;
+  SignalArray[2] := FClient.FDataSignal;
 
   if FClient.FHeartbeatInterval <> 0 then
     Interval := Trunc(FClient.FHeartbeatInterval * 1000 / 3)
@@ -1500,7 +1500,7 @@ begin
   try
     MS := TMemoryStream.Create;
     FStreamList.Add(TStreamInfo.Create(MS, 3));
-    FDataSignal.Release;
+    ReleaseSemaphore(FDataSignal, 1, Nil);
   finally
     FGuard.Leave;
   end;
