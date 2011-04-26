@@ -134,38 +134,38 @@ type
     destructor Destroy; override;
     procedure Init;
 
-    //The application developer should call this method
-    //if uses the marshalling to window
+    // The application developer should call this method
+    // If uses the marshalling of events to main thread
     procedure ProcessEvents;
 
-    //initiates connecting to specified Host:Port server
+    // Initiates connecting to specified Host:Port server
     procedure Connect;
 
-    //disconnects
+    // Disconnects
     procedure Disconnect;
 
-    //initiates stream sending to server
+    // Initiates stream sending to server
     procedure SendStream(AStream: TStream);
 
-    //initiates string sending to server
+    // Initiates string sending to server
     procedure SendString(AValue: AnsiString; AType: Word = 0);
 
-    //fetches the list of clients from server
+    // Fetches the list of clients from server
     procedure GetClientsListFromServer;
 
-    //waits for client disconnection
+    // Waits for client disconnection
     function WaitForDisconnect(Timeout: Cardinal): Boolean;
 
-    //waits for client list from server
+    // Waits for client list from server
     function WaitForClientList(Timeout: Cardinal): Boolean;
 
-    //properties
+    // Properties
 {$IFDEF USECONNECTFIBER}
     property Aggregator: TCommonMsgClientAggregator read FAggregator write FAggregator;
 {$ENDIF}
-    //property for use in mass tests
+    // Property for use in mass tests
     property LastSent: Double read FLastSent write FLastSent;
-    
+
     property Port: Word read FPort write FPort;
     property Host: AnsiString read FHost write FHost;
 
@@ -176,50 +176,50 @@ type
 
     property Active: Boolean read FActive write SetActive;
 
-    //events
+    // Events
     property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
 
-    //This event happens when stream specified in SendStream written to socket fully.
+    // This event happens when stream specified in SendStream written to socket fully.
     property OnStreamSent: TOnClientStreamSentEvent read FOnStreamSent write FOnStreamSent;
 
 
     property OnError: TOnClientErrorEvent read FOnError write FOnError;
 
-    //This event happens on receiving the message from server.
-    //Please be aware - the corresponding stream object will be freed on exit from
-    //handler.
+    // This event happens on receiving the message from server.
+    // Please be aware - the corresponding stream object will be freed on exit from
+    // handler.
     property OnDataReceived: TOnClientDataReceivedEvent read FOnDataReceived write FOnDataReceived;
 
-    //This event happens if Handshake property is set to true.
-    //Its parameters informs the developer about server authentication result.
-    //If it failed - OnError event happens also.
+    // This event happens if Handshake property is set to true.
+    // Its parameters informs the developer about server authentication result.
+    // If it failed - OnError event happens also.
     property OnAuthResult: TOnClientAuthResultEvent read FOnAuthResult write FOnAuthResult;
 
-    //This event raises on receiving of list of connected clients from server.
-    //Please be aware - the ClientList object will be freed on exit from handler.
-    //This list represents the collection of TMsgClientInfo objects
+    // This event raises on receiving of list of connected clients from server.
+    // Please be aware - the ClientList object will be freed on exit from handler.
+    // This list represents the collection of TMsgClientInfo objects
     property OnClientList: TOnClientListOfClientsEvent read FOnClientList write FOnClientList;
 
-    //It determines if user data are sent to server and authentication handlers
-    //called on both server and client sides.
+    // It determines if user data are sent to server and authentication handlers
+    // called on both server and client sides.
     property Handshake: Boolean read FHandshake write FHandshake;
 
-    //It is heartbeat messages interval.
-    //If there is no new messages in send queue - the new heartbeat message will be posted
-    //each HeartbeatInterval/2 seconds. So server will be happy and not detect the
-    //disconnection.
-    //The nonzero value also causes to check the receiving stream for timeout like server it
-    //does. So it unexpected server shutdown will be handled in proper way.
+    // It is heartbeat messages interval.
+    // If there is no new messages in send queue - the new heartbeat message will be posted
+    // each HeartbeatInterval/2 seconds. So server will be happy and not detect the
+    // disconnection.
+    // The nonzero value also causes to check the receiving stream for timeout like server it
+    // does. So it unexpected server shutdown will be handled in proper way.
     property HeartbeatInterval: Cardinal read FHeartbeatInterval write FHeartbeatInterval;
 
-    //it sets the window handle used for optional event marshalling
+    // It sets the window handle used for optional event marshalling
     property MarshallWindow: HWND read FMarshallWindow write FMarshallWindow;
     property MarshallMsg: Integer read FMarshallMsg write FMarshallMsg;
   end;
 
   TClientReadStage = (crHeader, crBody, crReadAll);
-  //The message header structure. Every message include this header.
+  // The message header structure. Every message include this header.
 
   TMsgHeader = packed record
     MsgLen: Cardinal;
@@ -230,12 +230,12 @@ type
   TCommonMsgClientHandler = class(TObject)
 {$ELSE}
   TCommonMsgClientHandler = class(TThread)
-{$ENDIF}  
+{$ENDIF}
   protected
     {$IFDEF USECONNECTFIBER}
     FTerminated: Boolean;
     {$ENDIF}
-    
+
     //pointer to owner TCommonMsgClient
     FClient: TCommonMsgClient;
     FConnected,
@@ -388,10 +388,12 @@ begin
   inherited Create;
   FStream := AStream;
   FType := AType;
+  // OutputDebugString('TStreamInfo.Create');
 end;
 
 destructor TStreamInfo.Destroy;
 begin
+  // OutputDebugString('TStreamInfo.Destroy');
   FreeAndNil(FStream);
   inherited Destroy;
 end;
@@ -434,6 +436,7 @@ end;
 destructor TCommonMsgClient.Destroy;
 begin
   Disconnect;
+  FThreadFinished.WaitFor(INFINITE);
 
   FreeAndNil(FEventList);
   FreeAndNil(FClientListArrived);
@@ -454,7 +457,7 @@ begin
   Winsock2.WSAStartup(MakeWord(2,0), WSAData);
 
   FGuard := TCriticalSection.Create;
-  FStreamList := TObjectList.Create(False);
+  FStreamList := TObjectList.Create(True);
   FDataSignal := Windows.CreateSemaphore(Nil, 0, $7FFFFFFF, Nil);
   FThreadFinished := TEvent.Create(Nil, False, False, '');
   FClientListArrived := TEvent.Create(Nil, False, False, '');
@@ -528,11 +531,8 @@ procedure TCommonMsgClient.InternalConnect;
 var WSAData: TWSAData;
     NonBlock: Cardinal;
 begin
-  //mark component as active
+  // Mark component as active
   FActive := True;
-
-  //thread is not finished yet
-  FThreadFinished.ResetEvent;
 
   if FSocket = INVALID_SOCKET then
     CreateSocket;
@@ -611,9 +611,12 @@ end;
 procedure TCommonMsgClient.PostStreamSent(SI: TStreamInfo);
 var EI: TEventInfo;
     Stream: TStream;
+    ResCode: Integer;
 begin
   FGuard.Enter;
   try
+    //ResCode := FStreamList.Remove(SI);
+
     // Detach stream from StreamInfo object
     Stream := SI.Stream;
     SI.Stream := Nil;
@@ -624,7 +627,9 @@ begin
     // Post event
     if FMarshallWindow <> 0 then
     begin
-      EI := TEventInfo.Create; EI._Type := etStreamSent; EI.Stream := Stream;
+      EI := TEventInfo.Create;
+      EI._Type := etStreamSent;
+      EI.Stream := Stream;
       QueueEvent(EI);
     end
     else
@@ -883,6 +888,11 @@ begin
   FClientList := TObjectList.Create(True);
   FStopSignal := TEvent.Create(Nil, False, False, '');
 
+  GetMem(FTempStorage, ClientTempStorageSize);
+  GetMem(FWriteTempStorage, ClientTempStorageSize);
+  GetMem(FHeaderData, sizeof(TMsgHeader));
+  GetMem(FParsedData, MaxMessageSize);
+
 {$IFNDEF USECONNECTFIBER}
   Resume;
 {$ENDIF}
@@ -891,6 +901,7 @@ end;
 
 destructor TCommonMsgClientHandler.Destroy;
 begin
+  FreeAndNil(FClientList);
   if Assigned(FTempStorage) then
     FreeMem(FTempStorage);
 
@@ -937,12 +948,24 @@ begin
 
   ResCode := $FFFFFFFF;
   if not Assigned(FStreamInfo) then
-    ResCode := Windows.WaitForMultipleObjects(3, @SignalArray, False, Interval)
+  begin
+    // No data to send now -> so check for FDataSignal too.
+    //OutputDebugString('WFMO_1');
+    ResCode := Windows.WaitForMultipleObjects(3, @SignalArray, False, Interval);
+  end
   else
   if not FCanWrite then
+  begin
+    // We have data to send now, and we couldnt send in previous attempt
+    //OutputDebugString('WFMO_2');
     ResCode := Windows.WaitForMultipleObjects(2, @SignalArray, False, Interval)
+  end
   else
+  begin
+    // There is data to write, so we just check if stop signal is signalled
+    // OutputDebugString('WFSO_1');
     ResCode := Windows.WaitForSingleObject(FStopSignal.Handle, 0); // Check for
+  end;
 
   // Signal to exit?
   if ResCode = WAIT_OBJECT_0 + 1 then
@@ -1043,6 +1066,9 @@ end;
 {$IFNDEF USECONNECTFIBER}
 procedure TCommonMsgClientHandler.Execute;
 begin
+  // Thread is not finished yet
+  FClient.FThreadFinished.ResetEvent;
+
   while not Terminated do
     InternalExecute;
 
@@ -1124,11 +1150,6 @@ begin
   else
   begin
     BindSocketToEvents();
-    GetMem(FTempStorage, ClientTempStorageSize);
-    GetMem(FWriteTempStorage, ClientTempStorageSize);
-    GetMem(FHeaderData, sizeof(TMsgHeader));
-    GetMem(FParsedData, MaxMessageSize);
-
     // Save the time of connection
     FLastSentHeartbeat := Now;
 
@@ -1253,16 +1274,22 @@ begin
   ResCode := 0;
   if FWritten < FToSend then
   begin
-    ResCode := Winsock2.send(FClient.FSocket, (FWriteTempStorage + FWritten)^, FToSend - FWritten, 0); //use send buffer
+    ResCode := Winsock2.send(FClient.FSocket, (FWriteTempStorage + FWritten)^, FToSend - FWritten, 0); // Use send buffer
     FLastSentHeartBeat := Now;
 
     if ResCode = SOCKET_ERROR then
     begin
       if Winsock2.WSAGetLastError() = WSAEWOULDBLOCK then
-        FCanWrite := False;
+        FCanWrite := False
+      else
+        FClient.PostClientError(AnsiString(Format('Winsock2.send() failed. Error code is %u', [WSAGetLastError()])));
 
       // Bind to FD_WRITE
-      BindSocketToEvents();
+      if not FCanWrite then
+        BindSocketToEvents();
+
+      // Leave the method
+      Exit;
     end;
   end;
 
@@ -1280,18 +1307,13 @@ begin
     // Check if full stream is sent
     if FStreamInfo.Stream.Position = FStreamInfo.Stream.Size then
     begin
+      //OutputDebugString('Stream sent');
       if FStreamInfo._Type = 0 then
-      begin
-        // Post event 'stream sent'
-        FClient.PostStreamSent(FStreamInfo);
-        FStreamInfo := Nil;
-        BindSocketToEvents();
-      end else
-      begin
+        FClient.PostStreamSent(FStreamInfo)
+      else
         FClient.DeleteStream(FStreamInfo);
-        FStreamInfo := Nil;
-        BindSocketToEvents();
-      end;
+      FStreamInfo := Nil;
+      BindSocketToEvents();
     end
     else
       FToSend := FStreamInfo.Stream.Read(FWriteTempStorage^, Math.Min(FStreamInfo.Stream.Size, ClientTempStorageSize));

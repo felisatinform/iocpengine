@@ -41,7 +41,7 @@ object FrmTest: TFrmTest
     TabOrder = 2
   end
   object TmrSend: TTimer
-    Interval = 20
+    Interval = 200
     OnTimer = TmrSendTimer
     Left = 72
     Top = 104
