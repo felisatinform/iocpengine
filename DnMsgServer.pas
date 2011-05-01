@@ -279,7 +279,7 @@ begin
     FListener.Active := False;
   FListener.WaitForShutdown;
 
-  DisconnectAll;
+  // DisconnectAll;
 
   //stop requestor - new requests will be ignored or exceptions raised
   FRequestor.Active := False;

@@ -64,8 +64,8 @@ begin
 
   FClient := TCommonMsgClient.Create(Nil);
   FServer := TCommonMsgServer.Create(Nil);
-  FClient.HeartbeatInterval := 20;
-  FClient.Handshake := True;
+  //FClient.HeartbeatInterval := 20;
+  //FClient.Handshake := True;
   FClient.Host := '127.0.0.1';
   FClient.Port := 8083;
   FClient.OnConnected := Self.Client_Connected;
@@ -92,7 +92,7 @@ var Msg: String;
 begin
   Msg := 'Server: ' + S;
   FLog.Add(Msg);
-  OutputDebugString(PWideChar(Msg));
+  //OutputDebugString(PWideChar(Msg));
 end;
 
 procedure TFrmTest.LogClient(const S: String);
@@ -100,7 +100,7 @@ var Msg: String;
 begin
   Msg := 'Client: ' + S;
   FLog.Add(Msg);
-  OutputDebugString(PWideChar(Msg));
+  //OutputDebugString(PWideChar(Msg));
 end;
 
 procedure TFrmTest.Server_ClientConnected (Sender: TObject; ClientRec: TClientRec);
@@ -161,7 +161,7 @@ end;
 
 procedure TFrmTest.TmrSendTimer(Sender: TObject);
 begin
-  FClient.SendString('TESTESTESTESTESTESTESTESTESTESTESTESTESTEST');
+  FClient.SendString('TESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTEST');
 end;
 
 procedure TFrmTest.Client_Connected (Sender: TObject);
@@ -181,12 +181,12 @@ end;
 
 procedure TFrmTest.Client_DataReceived (Sender: TObject; Stream: TStream);
 begin
-  // LogClient('received ' + IntToStr(Stream.Size) + ' bytes.');
+  LogClient('received ' + IntToStr(Stream.Size) + ' bytes.');
 end;
 
 procedure TFrmTest.Client_StreamSent (Sender: TObject; Stream: TStream);
 begin
-  // LogClient('sent ' + IntToStr(Stream.Size) + ' bytes.');
+  LogClient('sent ' + IntToStr(Stream.Size) + ' bytes.');
 end;
 
 procedure TFrmTest.BtClientClick(Sender: TObject);
