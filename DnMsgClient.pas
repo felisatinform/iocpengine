@@ -435,8 +435,15 @@ end;
 
 destructor TCommonMsgClient.Destroy;
 begin
-  Disconnect;
-  FThreadFinished.WaitFor(INFINITE);
+  FGuard.Enter;
+  if Assigned(FThread) then
+  begin
+    FGuard.Leave;
+    Disconnect;
+    FThreadFinished.WaitFor(INFINITE);
+  end
+  else
+    FGuard.Leave;
 
   FreeAndNil(FEventList);
   FreeAndNil(FClientListArrived);
@@ -794,6 +801,9 @@ end;
 
 procedure TCommonMsgClient.QueueEvent(EI: TEventInfo);
 begin
+  if not Assigned(FGuard) then
+    Exit;
+    
   FGuard.Enter;
   try
     FEventList.Add(EI);
