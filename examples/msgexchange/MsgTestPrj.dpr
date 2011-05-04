@@ -1,6 +1,7 @@
 program MsgTestPrj;
 
 uses
+  //FastMM4,
   Forms,
   msgtest in 'msgtest.pas' {FrmTest};
 
@@ -8,7 +9,7 @@ uses
 
 begin
   Application.Initialize;
-  Application.MainFormOnTaskbar := True;
+  //Application.MainFormOnTaskbar := True;
   Application.CreateForm(TFrmTest, FrmTest);
   Application.Run;
 end.

@@ -76,6 +76,7 @@ type
     FHandshake: Boolean;
     FHeartbeatInterval: Cardinal;
     FGuard: TCriticalSection;
+    FEventGuard: TCriticalSection;
     FStreamList: TObjectList;
     FThread: TCommonMsgClientHandler;
     FSocket: TSocket;
@@ -86,6 +87,10 @@ type
 {$IFDEF USECONNECTFIBER}
     FAggregator: TCommonMsgClientAggregator;
 {$ENDIF}
+    FTempStorage,
+    FWriteTempStorage,
+    FHeaderData,
+    FParsedData: PAnsiChar;
 
     FOnConnected: TNotifyEvent;
     FOnDisconnected: TNotifyEvent;
@@ -100,7 +105,6 @@ type
     FEventList: TObjectList;
     FDataSignal: THandle;
 
-    procedure InternalConnect;
     procedure SetActive(AValue: Boolean);
     procedure PostClientConnect;
     procedure DoClientConnect;
@@ -236,9 +240,8 @@ type
     FTerminated: Boolean;
     {$ENDIF}
 
-    //pointer to owner TCommonMsgClient
+    // Pointer to owner TCommonMsgClient
     FClient: TCommonMsgClient;
-    FConnected,
     FCanWrite: Boolean;
 
     //the remote peer IP address
@@ -404,6 +407,7 @@ begin
 end;
 
 destructor TEventInfo.Destroy;
+var Msg: String;
 begin
   //OutputDebugString(PChar('TEventInfo.Destroy for type ' + IntToStr(Ord(FType))));
   {$ifdef Debug_IOCP}
@@ -412,7 +416,11 @@ begin
   if FClientList <> Nil then
     FreeAndNil(FClientList);
   if FStream <> Nil then
+  begin
+    (*Msg := 'Free stream with size ' + IntToStr(FStream.Size);
+    OutputDebugString(PChar(Msg));*)
     FreeAndNil(FStream);
+  end;
   inherited Destroy;
 end;
 
@@ -435,15 +443,7 @@ end;
 
 destructor TCommonMsgClient.Destroy;
 begin
-  FGuard.Enter;
-  if Assigned(FThread) then
-  begin
-    FGuard.Leave;
-    Disconnect;
-    FThreadFinished.WaitFor(INFINITE);
-  end
-  else
-    FGuard.Leave;
+  Disconnect;
 
   FreeAndNil(FEventList);
   FreeAndNil(FClientListArrived);
@@ -452,7 +452,11 @@ begin
   FreeAndNil(FSocketSignal);
   FreeAndNil(FStreamList);
   FreeAndNil(FGuard);
-
+  FreeAndNil(FEventGuard);
+  FreeMem(FParsedData);
+  FreeMem(FWriteTempStorage);
+  FreeMem(FHeaderData);
+  FreeMem(FTempStorage);
   Winsock2.WSACleanup();
   inherited Destroy;
 end;
@@ -464,6 +468,7 @@ begin
   Winsock2.WSAStartup(MakeWord(2,0), WSAData);
 
   FGuard := TCriticalSection.Create;
+  FEventGuard := TCriticalSection.Create;
   FStreamList := TObjectList.Create(True);
   FDataSignal := Windows.CreateSemaphore(Nil, 0, $7FFFFFFF, Nil);
   FThreadFinished := TEvent.Create(Nil, False, False, '');
@@ -476,7 +481,10 @@ begin
   {$IFDEF USECONNECTFIBER}
   FLastSent := 0;
 {$ENDIF}
-
+  GetMem(FTempStorage, ClientTempStorageSize);
+  GetMem(FWriteTempStorage, ClientTempStorageSize);
+  GetMem(FHeaderData, sizeof(TMsgHeader));
+  GetMem(FParsedData, MaxMessageSize);
 end;
 
 procedure TCommonMsgClient.SetActive(AValue: Boolean);
@@ -495,7 +503,7 @@ var EventInfo: TEventInfo;
 begin
   EventInfo := Nil;
 
-  FGuard.Enter;
+  FEventGuard.Enter;
   try
     while FEventList.Count > 0 do
     begin
@@ -530,35 +538,25 @@ begin
       EventInfo.Free;
     end;
   finally
-    FGuard.Leave;
+    FEventGuard.Leave;
   end;
 end;
 
-procedure TCommonMsgClient.InternalConnect;
-var WSAData: TWSAData;
-    NonBlock: Cardinal;
+
+procedure TCommonMsgClient.Connect;
 begin
+  // Ensure we are disconnected (it will wait for thread stop)
+  Disconnect;
+
   // Mark component as active
   FActive := True;
 
   if FSocket = INVALID_SOCKET then
     CreateSocket;
 
-  //start connecting
+  // Start connecting
   FState := cmResolving;
-end;
-
-procedure TCommonMsgClient.Connect;
-begin
-  InternalConnect;
-
-  // Start thread for socket processing
-{$IFDEF USECONNECTFIBER}
-  FThread := FAggregator.AllocFiber(Self);
-{$ELSE}
-  if not Assigned(FThread) then
-    FThread := TCommonMsgClientHandler.Create(Self);
-{$ENDIF}
+  FThread := TCommonMsgClientHandler.Create(Self);
 end;
 
 procedure TCommonMsgClient.Disconnect;
@@ -566,17 +564,26 @@ begin
   // Signal thread to shutdown/closesocket
   FGuard.Enter;
   try
-    if FThread <> Nil then
+    if Assigned(FThread) then
+    begin
       FThread.Stop;
+      FThread.WaitFor;
+      FThread := Nil;
+    end;
+    FActive := False;
   finally
     FGuard.Leave;
   end;
+
 end;
 
 procedure TCommonMsgClient.SendStream(AStream: TStream);
+var Msg: String;
 begin
   FGuard.Enter;
   try
+    (*Msg := 'Sending stream with size ' + IntToStr(AStream.Size);
+    OutputDebugString(PChar(Msg));*)
     FStreamList.Add(TStreamInfo.Create(AStream, 0));
     ReleaseSemaphore(FDataSignal, 1, Nil);
   finally
@@ -586,9 +593,12 @@ end;
 
 procedure TCommonMsgClient.SendString(AValue: AnsiString; AType: Word = 0);
 var MS: TMemoryStream;
+    Msg: String;
 begin
   MS := TMemoryStream.Create;
   MS.Write(AValue[1], Length(AValue)); MS.Position := 0;
+  (*Msg := 'Sending stream with size ' + IntToStr(MS.Size);
+  OutputDebugString(PChar(Msg));*)
 
   FGuard.Enter;
   try
@@ -619,6 +629,7 @@ procedure TCommonMsgClient.PostStreamSent(SI: TStreamInfo);
 var EI: TEventInfo;
     Stream: TStream;
     ResCode: Integer;
+    Msg: String;
 begin
   FGuard.Enter;
   try
@@ -642,6 +653,8 @@ begin
     else
     begin
       DoStreamSent(Stream);
+      (*Msg := 'Free stream with size ' + IntToStr(Stream.Size);
+      OutputDebugString(PChar(Msg));*)
       FreeAndNil(Stream);
     end;
   finally
@@ -801,21 +814,17 @@ end;
 
 procedure TCommonMsgClient.QueueEvent(EI: TEventInfo);
 begin
-  if not Assigned(FGuard) then
-    Exit;
-    
-  FGuard.Enter;
+  FEventGuard.Enter;
   try
     FEventList.Add(EI);
   finally
-    FGuard.Leave;
+    FEventGuard.Leave;
   end;
   Windows.PostMessage(FMarshallWindow, FMarshallMsg, Integer(Pointer(Self)), 0);
 end;
 
 procedure TCommonMsgClient.DestroySocket;
 begin
-  FActive := False;
   Winsock2.shutdown(FSocket, 2);
   Winsock2.closesocket(FSocket);
   FSocket := Winsock2.INVALID_SOCKET;
@@ -897,12 +906,10 @@ begin
   FClient := Client;
   FClientList := TObjectList.Create(True);
   FStopSignal := TEvent.Create(Nil, False, False, '');
-
-  GetMem(FTempStorage, ClientTempStorageSize);
-  GetMem(FWriteTempStorage, ClientTempStorageSize);
-  GetMem(FHeaderData, sizeof(TMsgHeader));
-  GetMem(FParsedData, MaxMessageSize);
-
+  FTempStorage := FClient.FTempStorage;
+  FWriteTempStorage := FClient.FWriteTempStorage;
+  FHeaderData := FClient.FHeaderData;
+  FParsedData := FClient.FParsedData;
 {$IFNDEF USECONNECTFIBER}
   Resume;
 {$ENDIF}
@@ -912,22 +919,11 @@ end;
 destructor TCommonMsgClientHandler.Destroy;
 begin
   FreeAndNil(FClientList);
-  if Assigned(FTempStorage) then
-    FreeMem(FTempStorage);
-
-  if Assigned(FTempStorage) then
-    FreeMem(FWriteTempStorage);
-
-  if Assigned(FHeaderData) then
-    FreeMem(FHeaderData);
-
-  if Assigned(FParsedData) then
-    FreeMem(FParsedData);
-
   FreeAndNil(FStopSignal);
 {$IFNDEF USECONNECTFIBER}
   FreeAndNil(FLog);
 {$ENDIF}
+
   inherited Destroy;
 end;
 
@@ -1038,31 +1034,9 @@ end;
 
 procedure TCommonMsgClientHandler.InternalFinish;
 begin
-  // Winsock2.WSACleanup;
-
-  if not Assigned(FClient) then
-    Exit;
-
-  // Mark client as disconnected
-  FClient.FGuard.Enter;
-  try
-    FClient.FActive := False;
-    // Zero the pointer to thread
-    FClient.FThread := Nil;
-  finally
-    FClient.FGuard.Leave;
-  end;
-
   // Tell
-  if FConnected then
+  if FClient.FState > cmConnecting then
     InternalDisconnect;
-
-
-  // Tell the client 'thread is finished'
-  FClient.FThreadFinished.SetEvent;
-
-  // Free itself
-  FreeOnTerminate := True;
 end;
 
 procedure TCommonMsgClientHandler.BindSocketToEvents;
@@ -1076,9 +1050,6 @@ end;
 {$IFNDEF USECONNECTFIBER}
 procedure TCommonMsgClientHandler.Execute;
 begin
-  // Thread is not finished yet
-  FClient.FThreadFinished.ResetEvent;
-
   while not Terminated do
     InternalExecute;
 
@@ -1173,7 +1144,6 @@ begin
     FLastHeartbeat := Now;
 
     // Transition to cmOperable state
-    FConnected := True;
     FCanWrite := True;
     FClient.FState := cmOperable;
   end;
@@ -1182,20 +1152,16 @@ end;
 procedure TCommonMsgClientHandler.InternalDisconnect;
 begin
   FClient.DestroySocket;
-  if FConnected then
-    FClient.PostClientDisconnect;
-
-  // Not connected anymore
-  FConnected := False;
-
-  // Finish the thread
-  Terminate;
+  FClient.PostClientDisconnect;
+  FClient.FState := cmIdle;
+  FClient.FActive := False;
+  Terminate; // Exit from thread
 end;
 
 procedure TCommonMsgClientHandler.HandleDisconnect(Signaled: Boolean);
 var ResCode: Integer;
 begin
-  if FConnected then
+  if FClient.FState >= cmConnecting then
     Winsock2.shutdown(FClient.FSocket, 2);
   InternalDisconnect;
 end;

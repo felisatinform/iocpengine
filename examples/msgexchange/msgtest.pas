@@ -59,7 +59,7 @@ implementation
 
 procedure TFrmTest.FormCreate(Sender: TObject);
 begin
-  FLog := TStringList.Create(True);
+  FLog := TStringList.Create();
   FLogGuard := TCriticalSection.Create();
 
   FClient := TCommonMsgClient.Create(Nil);
@@ -138,11 +138,15 @@ begin
 end;
 
 procedure TFrmTest.TmrLogTimer(Sender: TObject);
+var i: integer;
 begin
   FLogGuard.Enter;
   try
     MmLog.Lines.AddStrings(FLog);
     FLog.Clear;
+    if MmLog.Lines.Count > 200 then
+    for i:=0 to 99 do
+      MmLog.Lines.Delete(0);
   finally
     FLogGuard.Leave;
   end;
@@ -153,15 +157,19 @@ begin
       FClient.ProcessEvents;
 
     if FClient.Active then
-      BtClient.Caption := 'Stop'
+      BtClient.Caption := 'Stop client'
     else
-      BtClient.Caption := 'Start';
+      BtClient.Caption := 'Start client';
   end;
 end;
 
 procedure TFrmTest.TmrSendTimer(Sender: TObject);
+var Msg: AnsiString;
 begin
-  FClient.SendString('TESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTEST');
+  SetLength(Msg, 4096);
+  if FClient.Active then
+    FClient.SendString(Msg);
+  //FClient.SendString('TESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTEST');
 end;
 
 procedure TFrmTest.Client_Connected (Sender: TObject);
