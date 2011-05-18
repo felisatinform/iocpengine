@@ -76,7 +76,7 @@ begin
   FClient.OnStreamSent := Self.Client_StreamSent;
   FClient.OnAuthResult := Self.Client_AuthResult;
   FClient.OnClientList := Self.Client_ListOfClients;
-  //FClient.MarshallWindow := Self.Handle;
+  FClient.MarshallWindow := Self.Handle;
 
   FServer.Port := 8083;
   FServer.OnClientConnected := Self.Server_ClientConnected;
@@ -85,6 +85,8 @@ begin
   FServer.OnDataReceived := Self.Server_DataReceived;
   FServer.OnError := Self.Server_Error;
   FServer.OnStreamSent := Self.Server_StreamSent;
+
+  TmrLog.Enabled := True;
 end;
 
 procedure TFrmTest.LogServer(const S: String);
@@ -166,9 +168,9 @@ end;
 procedure TFrmTest.TmrSendTimer(Sender: TObject);
 var Msg: AnsiString;
 begin
-  SetLength(Msg, 4096);
+  (*SetLength(Msg, 4096);
   if FClient.Active then
-    FClient.SendString(Msg);
+    FClient.SendString(Msg);*)
   //FClient.SendString('TESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTEST');
 end;
 
@@ -180,6 +182,7 @@ end;
 procedure TFrmTest.Client_Disconnected (Sender: TObject);
 begin
   LogClient('client disconnected from server');
+  FClient.Connect;
 end;
 
 procedure TFrmTest.Client_Error (Sender: TObject; ErrorMessage: AnsiString);

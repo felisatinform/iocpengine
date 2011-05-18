@@ -568,7 +568,7 @@ begin
     begin
       FThread.Stop;
       FThread.WaitFor;
-      FThread := Nil;
+      FreeAndNil(FThread);// := Nil;
     end;
     FActive := False;
   finally
@@ -825,10 +825,13 @@ end;
 
 procedure TCommonMsgClient.DestroySocket;
 begin
-  Winsock2.shutdown(FSocket, 2);
-  Winsock2.closesocket(FSocket);
-  FSocket := Winsock2.INVALID_SOCKET;
-  FreeAndNil(FSocketSignal);
+  if FSocket <> Winsock2.INVALID_SOCKET then
+  begin
+    Winsock2.shutdown(FSocket, 2);
+    Winsock2.closesocket(FSocket);
+    FSocket := Winsock2.INVALID_SOCKET;
+    FreeAndNil(FSocketSignal);
+  end;
 end;
 
 procedure TCommonMsgClient.CreateSocket;
@@ -910,6 +913,7 @@ begin
   FWriteTempStorage := FClient.FWriteTempStorage;
   FHeaderData := FClient.FHeaderData;
   FParsedData := FClient.FParsedData;
+
 {$IFNDEF USECONNECTFIBER}
   Resume;
 {$ENDIF}
@@ -977,32 +981,46 @@ begin
   if ResCode = WAIT_OBJECT_0 + 1 then
     Exit;
 
-  // No I/O - schedule heartbeat msg
-  if (ResCode = WAIT_TIMEOUT) and (Assigned(FStreamInfo) and FCanWrite) then
+  // No I/O yet
+  if ResCode = WAIT_TIMEOUT then
   begin
-    HandleWrite(0);
-    Exit;
-  end
-  else
-  if (ResCode = WAIT_TIMEOUT) and (FClient.FHeartbeatInterval <> 0) then
-  begin
-    // Time to post heartbeat msg
-    if Now - FLastHeartbeat > FClient.FHeartbeatInterval then
+    if FClient.FState = cmOperable then
     begin
-      FClient.PostClientError('I/O timeouted.');
-      Exit;
+      if Assigned(FStreamInfo) and FCanWrite then
+      begin
+        HandleWrite(0);
+        Exit;
+      end
+      else
+      if FClient.FHeartbeatInterval <> 0 then
+      begin
+        // Time to post heartbeat msg
+        if Now - FLastHeartbeat > FClient.FHeartbeatInterval then
+        begin
+          FClient.PostClientError('I/O timeouted.');
+          Exit;
+        end
+        else
+          FClient.PostHeartbeatMsg;
+      end;
     end
     else
-      FClient.PostHeartbeatMsg;
-  end;
+    if FClient.FState = cmConnecting then
+    begin
+      HandleConnected(WSAETIMEDOUT);
+      HandleDisconnect(False);
+    end;
 
+  end
+  else
   if ResCode = WAIT_OBJECT_0 + 2 then
   begin
     // Get next stream for sending
     FStreamInfo := FClient.PopStreamForSending;
 
     // Prepare receive FD_WRITE notifications
-    BindSocketToEvents();
+    if FClient.FState = cmOperable then
+      BindSocketToEvents();
 
     // Continue
     Exit;

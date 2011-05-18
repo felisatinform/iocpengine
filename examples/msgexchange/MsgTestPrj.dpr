@@ -2,6 +2,7 @@ program MsgTestPrj;
 
 uses
   //FastMM4,
+  //Denomo,
   Forms,
   msgtest in 'msgtest.pas' {FrmTest};
 
