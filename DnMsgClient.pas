@@ -984,7 +984,7 @@ begin
     Exit;
   end
   else
-  if ResCode = WAIT_TIMEOUT then
+  if (ResCode = WAIT_TIMEOUT) and (FClient.FHeartbeatInterval <> 0) then
   begin
     // Time to post heartbeat msg
     if Now - FLastHeartbeat > FClient.FHeartbeatInterval then
@@ -1034,7 +1034,7 @@ end;
 
 procedure TCommonMsgClientHandler.InternalFinish;
 begin
-  // Tell
+  FClient.FActive := True;
   if FClient.FState > cmConnecting then
     InternalDisconnect;
 end;
@@ -1131,6 +1131,7 @@ begin
   else
   begin
     BindSocketToEvents();
+
     // Save the time of connection
     FLastSentHeartbeat := Now;
 
