@@ -510,7 +510,8 @@ begin
       try
         //get event list
         EventInfo := FEventList.Extract(FEventList[0]) as TEventInfo;
-
+        FEventGuard.Leave;
+        
        {$ifndef Debug_IOCP}
         case EventInfo._Type of
           etConnect:      begin (*OutputDebugString('Client connect.'); *) DoClientConnect; end;
@@ -536,10 +537,12 @@ begin
       end;
 
       EventInfo.Free;
+      FEventGuard.Enter;
     end;
-  finally
-    FEventGuard.Leave;
+  except
+    FEventGuard.Enter;
   end;
+  FEventGuard.Leave;
 end;
 
 
@@ -1052,7 +1055,7 @@ end;
 
 procedure TCommonMsgClientHandler.InternalFinish;
 begin
-  FClient.FActive := True;
+  FClient.FActive := False;
   if FClient.FState > cmConnecting then
     InternalDisconnect;
 end;

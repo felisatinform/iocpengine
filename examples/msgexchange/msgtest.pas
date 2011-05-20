@@ -111,9 +111,13 @@ begin
 end;
 
 procedure TFrmTest.Server_ClientAuthentication (Sender: TObject; ClientRec: TClientRec; var Authenticated: Boolean);
+var Request: AnsiString;
 begin
   LogServer('client authenticated');
   Authenticated := True;
+  SetLength(Request, 2048);
+  FillChar(Request[1], 2048, 123);
+  FServer.SendString(Request, ClientRec);
   //FServer.SendString('test', ClientRec);
 end;
 
@@ -168,9 +172,9 @@ end;
 procedure TFrmTest.TmrSendTimer(Sender: TObject);
 var Msg: AnsiString;
 begin
-  (*SetLength(Msg, 4096);
+  SetLength(Msg, 4096);
   if FClient.Active then
-    FClient.SendString(Msg);*)
+    FClient.SendString(Msg);
   //FClient.SendString('TESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTESTTESTESTESTESTESTEST');
 end;
 
@@ -191,8 +195,12 @@ begin
 end;
 
 procedure TFrmTest.Client_DataReceived (Sender: TObject; Stream: TStream);
+var Response: AnsiString;
 begin
   LogClient('received ' + IntToStr(Stream.Size) + ' bytes.');
+  SetLength(Response, 1024*1024*2);
+  FillChar(Response[1], Length(Response), 23);
+  FClient.SendString(Response);
 end;
 
 procedure TFrmTest.Client_StreamSent (Sender: TObject; Stream: TStream);
