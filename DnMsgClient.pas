@@ -84,6 +84,7 @@ type
     FClientListArrived: TEvent;
     FState: TCommonMsgClientState;
     FSocketSignal: TEvent;
+    FStateSignal: TEvent;
 {$IFDEF USECONNECTFIBER}
     FAggregator: TCommonMsgClientAggregator;
 {$ENDIF}
@@ -230,16 +231,8 @@ type
     MsgType: Word;
   end;
 
-{$IFDEF USECONNECTFIBER}
-  TCommonMsgClientHandler = class(TObject)
-{$ELSE}
   TCommonMsgClientHandler = class(TThread)
-{$ENDIF}
   protected
-    {$IFDEF USECONNECTFIBER}
-    FTerminated: Boolean;
-    {$ENDIF}
-
     // Pointer to owner TCommonMsgClient
     FClient: TCommonMsgClient;
     FCanWrite: Boolean;
@@ -294,19 +287,22 @@ type
     FLog: TFileStream;
 
     FClientList: TObjectList;
-    FStopSignal: TEvent;
+
+    // Socket was connected ok
+    FWasConnected: Boolean;
 
     procedure LogMsg(S: AnsiString);
     function  InternalConnect: Cardinal;
 
     // Handles the logic in cmResolving state - it resolves host name to IP
     procedure HandleResolving;
+    procedure HandleConnecting;
+    procedure HandleDisconnecting;
+    procedure HandleOperable;
+    procedure HandleIdle;
 
     // Handles the login in cmConnecting stage - it checks the result of WSAConnect and raises error if neccessary
     procedure HandleConnected(ErrorCode: Integer);
-
-    // Handles the disconnection
-    procedure HandleDisconnect(Signaled: Boolean);
 
     // Handle the socket ready to write
     procedure HandleWrite(ErrorCode: Cardinal);
@@ -386,6 +382,10 @@ var
 
 {$endif}
 
+const
+  WAIT_OBJECT_1 = WAIT_OBJECT_0+1;
+  WAIT_OBJECT_2 = WAIT_OBJECT_0+2;
+
 constructor TStreamInfo.Create(AStream: TStream; AType: Word);
 begin
   inherited Create;
@@ -445,11 +445,27 @@ destructor TCommonMsgClient.Destroy;
 begin
   Disconnect;
 
+  // Stop thread
+  FGuard.Enter;
+  try
+    if Assigned(FThread) then
+    begin
+      FThread.Terminate;
+      FStateSignal.SetEvent;
+      FThread.WaitFor;
+      FreeAndNil(FThread);
+    end;
+    FActive := False;
+  finally
+    FGuard.Leave;
+  end;
+
   FreeAndNil(FEventList);
   FreeAndNil(FClientListArrived);
   FreeAndNil(FThreadFinished);
   Windows.CloseHandle(FDataSignal);
   FreeAndNil(FSocketSignal);
+  FreeAndNil(FStateSignal);
   FreeAndNil(FStreamList);
   FreeAndNil(FGuard);
   FreeAndNil(FEventGuard);
@@ -485,6 +501,8 @@ begin
   GetMem(FWriteTempStorage, ClientTempStorageSize);
   GetMem(FHeaderData, sizeof(TMsgHeader));
   GetMem(FParsedData, MaxMessageSize);
+  FSocketSignal := TEvent.Create(Nil, False, False, '');
+  FStateSignal := TEvent.Create(nil, False, False, '');
 end;
 
 procedure TCommonMsgClient.SetActive(AValue: Boolean);
@@ -548,36 +566,21 @@ end;
 
 procedure TCommonMsgClient.Connect;
 begin
-  // Ensure we are disconnected (it will wait for thread stop)
-  Disconnect;
-
   // Mark component as active
   FActive := True;
 
-  if FSocket = INVALID_SOCKET then
-    CreateSocket;
+  // Signal to thread
+  FStateSignal.SetEvent;
 
-  // Start connecting
-  FState := cmResolving;
-  FThread := TCommonMsgClientHandler.Create(Self);
+  if not Assigned(FThread) then
+    FThread := TCommonMsgClientHandler.Create(Self);
 end;
 
 procedure TCommonMsgClient.Disconnect;
 begin
-  // Signal thread to shutdown/closesocket
-  FGuard.Enter;
-  try
-    if Assigned(FThread) then
-    begin
-      FThread.Stop;
-      FThread.WaitFor;
-      FreeAndNil(FThread);// := Nil;
-    end;
-    FActive := False;
-  finally
-    FGuard.Leave;
-  end;
-
+  // Signal thread to close existing connection
+  FActive := False;
+  FStateSignal.SetEvent;
 end;
 
 procedure TCommonMsgClient.SendStream(AStream: TStream);
@@ -698,8 +701,6 @@ end;
 procedure TCommonMsgClient.PostClientDisconnect;
 var EI: TEventInfo;
 begin
-  FState := cmIdle;
-
   if FMarshallWindow <> 0 then
   begin
     EI := TEventInfo.Create; EI._Type := etDisconnect;
@@ -721,7 +722,6 @@ end;
 procedure TCommonMsgClient.PostClientError(Msg: AnsiString);
 var EI: TEventInfo;
 begin
-  FState := cmDisconnecting;
   if FMarshallWindow <> 0 then
   begin
     EI := TEventInfo.Create;
@@ -833,7 +833,6 @@ begin
     Winsock2.shutdown(FSocket, 2);
     Winsock2.closesocket(FSocket);
     FSocket := Winsock2.INVALID_SOCKET;
-    FreeAndNil(FSocketSignal);
   end;
 end;
 
@@ -845,8 +844,7 @@ begin
   if FSocket = INVALID_SOCKET then
     raise Exception.Create(Format('Cannot create the socket. Error code is %u', [Winsock2.WSAGetLastError()]));
 
-  // Make it non-blocking
-  FSocketSignal := TEvent.Create(Nil, False, False, '');
+  FSocketSignal.ResetEvent;
 
   // Put to WSAWait state
   if Winsock2.WSAEventSelect(FSocket, FSocketSignal.Handle, FD_CONNECT) = SOCKET_ERROR then
@@ -911,7 +909,6 @@ begin
 {$ENDIF}
   FClient := Client;
   FClientList := TObjectList.Create(True);
-  FStopSignal := TEvent.Create(Nil, False, False, '');
   FTempStorage := FClient.FTempStorage;
   FWriteTempStorage := FClient.FWriteTempStorage;
   FHeaderData := FClient.FHeaderData;
@@ -925,8 +922,8 @@ end;
 
 destructor TCommonMsgClientHandler.Destroy;
 begin
+  FreeAndNil(FStreamInfo);
   FreeAndNil(FClientList);
-  FreeAndNil(FStopSignal);
 {$IFNDEF USECONNECTFIBER}
   FreeAndNil(FLog);
 {$ENDIF}
@@ -940,117 +937,20 @@ begin
 end;
 
 procedure TCommonMsgClientHandler.InternalExecute;
-var
-  ResCode, Interval: Cardinal; ErrCode, ErrCodeSize: Integer;
-  SignalArray: array[0..2] of THandle;
-  Events: TWSANetworkEvents;
-
 begin
-  if FClient.FState = cmResolving then
-    HandleResolving;
-
-  SignalArray[0] := FClient.FSocketSignal.Handle;
-  SignalArray[1] := FStopSignal.Handle;
-  SignalArray[2] := FClient.FDataSignal;
-
-  if FClient.FHeartbeatInterval <> 0 then
-    Interval := Trunc(FClient.FHeartbeatInterval * 1000 / 3)
+  if FClient.FActive and (FClient.FState = cmIdle) then
+    FClient.FState := cmResolving
   else
-    Interval := INFINITE;
+  if not FClient.FActive and (FClient.FState <> cmIdle) then
+    FClient.FState := cmDisconnecting;
 
-
-  ResCode := $FFFFFFFF;
-  if not Assigned(FStreamInfo) then
-  begin
-    // No data to send now -> so check for FDataSignal too.
-    //OutputDebugString('WFMO_1');
-    ResCode := Windows.WaitForMultipleObjects(3, @SignalArray, False, Interval);
-  end
-  else
-  if not FCanWrite then
-  begin
-    // We have data to send now, and we couldnt send in previous attempt
-    //OutputDebugString('WFMO_2');
-    ResCode := Windows.WaitForMultipleObjects(2, @SignalArray, False, Interval)
-  end
-  else
-  begin
-    // There is data to write, so we just check if stop signal is signalled
-    // OutputDebugString('WFSO_1');
-    ResCode := Windows.WaitForSingleObject(FStopSignal.Handle, 0); // Check for
+  case FClient.FState of
+    cmResolving:        HandleResolving();
+    cmConnecting:       HandleConnecting();
+    cmDisconnecting:    HandleDisconnecting();
+    cmIdle:             HandleIdle();
+    cmOperable:         HandleOperable();
   end;
-
-  // Signal to exit?
-  if ResCode = WAIT_OBJECT_0 + 1 then
-    Exit;
-
-  // No I/O yet
-  if ResCode = WAIT_TIMEOUT then
-  begin
-    if FClient.FState = cmOperable then
-    begin
-      if Assigned(FStreamInfo) and FCanWrite then
-      begin
-        HandleWrite(0);
-        Exit;
-      end
-      else
-      if FClient.FHeartbeatInterval <> 0 then
-      begin
-        // Time to post heartbeat msg
-        if Now - FLastHeartbeat > FClient.FHeartbeatInterval then
-        begin
-          FClient.PostClientError('I/O timeouted.');
-          Exit;
-        end
-        else
-          FClient.PostHeartbeatMsg;
-      end;
-    end
-    else
-    if FClient.FState = cmConnecting then
-    begin
-      HandleConnected(WSAETIMEDOUT);
-      HandleDisconnect(False);
-    end;
-
-  end
-  else
-  if ResCode = WAIT_OBJECT_0 + 2 then
-  begin
-    // Get next stream for sending
-    FStreamInfo := FClient.PopStreamForSending;
-
-    // Prepare receive FD_WRITE notifications
-    if FClient.FState = cmOperable then
-      BindSocketToEvents();
-
-    // Continue
-    Exit;
-  end;
-
-  // Check network events
-  WSAEnumNetworkEvents(FClient.FSocket, FClient.FSocketSignal.Handle, @Events);
-  if FClient.FState = cmConnecting then
-    HandleConnected(Events.iErrorCode[FD_CONNECT_BIT]);
-
-  if FClient.FState = cmOperable then
-  begin
-    if (Events.lNetworkEvents and FD_READ) <> 0 then
-      HandleRead(Events.iErrorCode[FD_READ_BIT]); // Now we can read from socket
-
-    FCanWrite := FCanWrite or ((Events.lNetworkEvents and FD_WRITE) <> 0);
-
-    if FCanWrite then
-      HandleWrite(Events.iErrorCode[FD_WRITE_BIT]); // Now we can write to socket
-
-    if (Events.lNetworkEvents and FD_CLOSE) <> 0 then
-      FClient.FState := cmDisconnecting;
-  end;
-
-
-  if FClient.FState = cmDisconnecting then
-    HandleDisconnect(False);
 end;
 
 procedure TCommonMsgClientHandler.InternalFinish;
@@ -1071,6 +971,7 @@ end;
 {$IFNDEF USECONNECTFIBER}
 procedure TCommonMsgClientHandler.Execute;
 begin
+
   while not Terminated do
     InternalExecute;
 
@@ -1080,7 +981,6 @@ end;
 procedure TCommonMsgClientHandler.Stop;
 begin
   Terminate;
-  FStopSignal.SetEvent;
 end;
 {$ENDIF}
 
@@ -1123,21 +1023,140 @@ begin
 
     // Switch to disconnect stage
     FClient.FState := cmDisconnecting;
-    Exit;
+  end
+  else
+  begin
+    // Transition to connecting state
+    FClient.FState := cmConnecting;
+
+    // Initialize connecting
+    if FClient.FSocket = INVALID_SOCKET then
+      FClient.CreateSocket;
+
+    ResCode := InternalConnect;
+
+    // Check for result code
+    if ResCode = SOCKET_ERROR then
+    begin
+      ResCode := Winsock2.WSAGetLastError();
+      if ResCode <> WSAEWOULDBLOCK then
+        FClient.PostClientError(AnsiString(Format('Cannot connect. Result code is %u', [ResCode])));
+    end;
+  end;
+end;
+
+procedure TCommonMsgClientHandler.HandleConnecting;
+var Signals: array[0..1] of Cardinal;
+    ResCode, Timeout: Cardinal;
+    Events: TWSANetworkEvents;
+begin
+  Signals[0] := FClient.FStateSignal.Handle;
+  Signals[1] := FClient.FSocketSignal.Handle;
+  if FClient.HeartbeatInterval > 0 then
+    Timeout := FClient.HeartbeatInterval * 1000
+  else
+    Timeout := Windows.INFINITE;
+
+  ResCode := WaitForMultipleObjects(2, @Signals, False, Timeout);
+  case ResCode of
+    WAIT_OBJECT_0:    exit;
+    WAIT_OBJECT_1:    begin
+                        // Check network events
+                        WSAEnumNetworkEvents(FClient.FSocket, FClient.FSocketSignal.Handle, @Events);
+                        HandleConnected(Events.iErrorCode[FD_CONNECT_BIT]);
+                      end;
+
+    WAIT_TIMEOUT:     HandleConnected(WSAETIMEDOUT);
+  end;
+end;
+
+procedure TCommonMsgClientHandler.HandleDisconnecting;
+begin
+  if (FClient.FSocket <> INVALID_SOCKET) and FWasConnected then
+    Winsock2.shutdown(FClient.FSocket, 2);
+  InternalDisconnect;
+end;
+
+procedure TCommonMsgClientHandler.HandleIdle;
+begin
+  WaitForSingleObject(FClient.FStateSignal.Handle, INFINITE);
+end;
+
+procedure TCommonMsgClientHandler.HandleOperable;
+var
+  ResCode, Interval: Cardinal; ErrCode, ErrCodeSize: Integer;
+  SignalArray: array[0..2] of THandle;
+  Events: TWSANetworkEvents;
+begin
+  // Prepare array of events
+  SignalArray[0] := FClient.FStateSignal.Handle;   // Change thread state
+  SignalArray[1] := FClient.FSocketSignal.Handle;  // I/O event
+  SignalArray[2] := FClient.FDataSignal;            // New data signal
+
+  // Find timeout value
+  if FClient.FHeartbeatInterval <> 0 then
+    Interval := Trunc(FClient.FHeartbeatInterval * 1000 / 3)
+  else
+    Interval := INFINITE;
+
+
+  ResCode := $FFFFFFFF;
+  if not Assigned(FStreamInfo) then
+  begin
+    // No data to send now -> so check for FDataSignal too.
+    //OutputDebugString('WFMO_1');
+    ResCode := Windows.WaitForMultipleObjects(3, @SignalArray, False, Interval);
+  end
+  else
+  if not FCanWrite then
+  begin
+    // We have data to send now, and we couldnt send in previous attempt
+    ResCode := Windows.WaitForMultipleObjects(2, @SignalArray, False, Interval)
+  end
+  else
+  begin
+    // There is data to write, so we just check if stop signal is signalled
+    ResCode := Windows.WaitForSingleObject(FClient.FStateSignal.Handle, 0); // Check for
   end;
 
-  //transition to connecting state
-  FClient.FState := cmConnecting;
+  case ResCode of
+    WAIT_OBJECT_0:      exit; // State is changed
+    WAIT_OBJECT_1:      begin // Smth new on socket
+                          // Check network events
+                          WSAEnumNetworkEvents(FClient.FSocket, FClient.FSocketSignal.Handle, @Events);
+                          if (Events.lNetworkEvents and FD_READ) <> 0 then
+                            HandleRead(Events.iErrorCode[FD_READ_BIT]); // Now we can read from socket
 
-  // Initialize connecting
-  ResCode := InternalConnect;
+                          FCanWrite := FCanWrite or ((Events.lNetworkEvents and FD_WRITE) <> 0);
 
-  //check for result code
-  if ResCode = SOCKET_ERROR then
-  begin
-    ResCode := Winsock2.WSAGetLastError();
-    if ResCode <> WSAEWOULDBLOCK then
-      FClient.PostClientError(AnsiString(Format('Cannot connect. Result code is %u', [ResCode])));
+                          if FCanWrite then
+                            HandleWrite(Events.iErrorCode[FD_WRITE_BIT]); // Now we can write to socket
+
+                          // Connection is closing ?
+                          if (Events.lNetworkEvents and FD_CLOSE) <> 0 then
+                            FClient.FState := cmDisconnecting;
+                        end;
+
+    WAIT_OBJECT_2:      begin // Outgoing data in queue
+                          // Get next stream for sending
+                          FStreamInfo := FClient.PopStreamForSending;
+
+                          // Prepare receive FD_WRITE notifications
+                          BindSocketToEvents();
+                        end;
+
+    WAIT_TIMEOUT:       begin
+                          if Assigned(FStreamInfo) and FCanWrite then
+                            HandleWrite(0)
+                          else
+                          if FClient.FHeartbeatInterval > 0 then
+                          begin
+                            if (Now - FLastHeartbeat) * 86400 > FClient.FHeartbeatInterval then
+                              FClient.PostClientError('I/O timeouted')
+                            else
+                              FClient.PostHeartbeatMsg();
+                          end;
+                        end;
   end;
 end;
 
@@ -1151,6 +1170,8 @@ begin
   end
   else
   begin
+    FWasConnected := True;
+
     BindSocketToEvents();
 
     // Save the time of connection
@@ -1173,20 +1194,17 @@ end;
 
 procedure TCommonMsgClientHandler.InternalDisconnect;
 begin
-  FClient.DestroySocket;
-  FClient.PostClientDisconnect;
+  if FWasConnected then
+  begin
+    FClient.DestroySocket;
+    FWasConnected := False;
+  end;
+
   FClient.FState := cmIdle;
   FClient.FActive := False;
-  Terminate; // Exit from thread
+  FClient.PostClientDisconnect;
 end;
 
-procedure TCommonMsgClientHandler.HandleDisconnect(Signaled: Boolean);
-var ResCode: Integer;
-begin
-  if FClient.FState >= cmConnecting then
-    Winsock2.shutdown(FClient.FSocket, 2);
-  InternalDisconnect;
-end;
 
 function TCommonMsgClientHandler.InternalRead: Boolean;
 var ResCode: Integer;
@@ -1525,6 +1543,7 @@ begin
     FGuard.Leave;
   end;
 end;
+
 
 procedure TCommonMsgClientHandler.HandleError;
 begin

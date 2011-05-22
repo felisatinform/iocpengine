@@ -108,6 +108,7 @@ end;
 procedure TFrmTest.Server_ClientConnected (Sender: TObject; ClientRec: TClientRec);
 begin
   LogServer('client connected');
+  FServer.SendString('test', ClientRec);
 end;
 
 procedure TFrmTest.Server_ClientAuthentication (Sender: TObject; ClientRec: TClientRec; var Authenticated: Boolean);
@@ -150,9 +151,9 @@ begin
   try
     MmLog.Lines.AddStrings(FLog);
     FLog.Clear;
-    if MmLog.Lines.Count > 200 then
+    (*if MmLog.Lines.Count > 200 then
     for i:=0 to 99 do
-      MmLog.Lines.Delete(0);
+      MmLog.Lines.Delete(0);*)
   finally
     FLogGuard.Leave;
   end;
@@ -197,10 +198,12 @@ end;
 procedure TFrmTest.Client_DataReceived (Sender: TObject; Stream: TStream);
 var Response: AnsiString;
 begin
-  LogClient('received ' + IntToStr(Stream.Size) + ' bytes.');
-  SetLength(Response, 1024*1024*2);
+  LogClient('Received ' + IntToStr(Stream.Size) + ' bytes.');
+  SetLength(Response, 256);
+
+  //SetLength(Response, 1024*1024*2);
   FillChar(Response[1], Length(Response), 23);
-  FClient.SendString(Response);
+  //FClient.SendString(Response);
 end;
 
 procedure TFrmTest.Client_StreamSent (Sender: TObject; Stream: TStream);
@@ -240,6 +243,8 @@ var
 begin
   if FServer.Active then
   begin
+    FServer.DisconnectAll;
+    Sleep(500);
     FServer.Active := False;
     BtServer.Caption := 'Start server';
   end
