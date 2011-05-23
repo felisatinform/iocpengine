@@ -473,6 +473,9 @@ begin
   FreeMem(FWriteTempStorage);
   FreeMem(FHeaderData);
   FreeMem(FTempStorage);
+  if FSocket <> INVALID_SOCKET then
+    DestroySocket();
+    
   Winsock2.WSACleanup();
   inherited Destroy;
 end;

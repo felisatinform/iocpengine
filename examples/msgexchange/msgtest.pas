@@ -201,9 +201,9 @@ begin
   LogClient('Received ' + IntToStr(Stream.Size) + ' bytes.');
   SetLength(Response, 256);
 
-  //SetLength(Response, 1024*1024*2);
+  // SetLength(Response, 1024*1024*2);
   FillChar(Response[1], Length(Response), 23);
-  //FClient.SendString(Response);
+  FClient.SendString(Response);
 end;
 
 procedure TFrmTest.Client_StreamSent (Sender: TObject; Stream: TStream);
