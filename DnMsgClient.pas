@@ -925,7 +925,7 @@ end;
 
 destructor TCommonMsgClientHandler.Destroy;
 begin
-  FreeAndNil(FStreamInfo);
+  //FreeAndNil(FStreamInfo);
   FreeAndNil(FClientList);
 {$IFNDEF USECONNECTFIBER}
   FreeAndNil(FLog);
