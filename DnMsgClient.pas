@@ -1197,7 +1197,7 @@ end;
 
 procedure TCommonMsgClientHandler.InternalDisconnect;
 begin
-  if FWasConnected then
+  //if FWasConnected then
   begin
     FClient.DestroySocket;
     FWasConnected := False;

@@ -66,7 +66,8 @@ begin
   FServer := TCommonMsgServer.Create(Nil);
   //FClient.HeartbeatInterval := 20;
   //FClient.Handshake := True;
-  FClient.Host := '127.0.0.1';
+  FClient.Host := '10.10.8.200';
+  //FClient.Host := '127.0.0.1';
   FClient.Port := 8083;
   FClient.OnConnected := Self.Client_Connected;
   FClient.OnDisconnected := Self.Client_Disconnected;
