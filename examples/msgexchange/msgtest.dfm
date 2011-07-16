@@ -42,7 +42,7 @@ object FrmTest: TFrmTest
   end
   object TmrSend: TTimer
     Enabled = False
-    Interval = 200
+    Interval = 5000
     OnTimer = TmrSendTimer
     Left = 72
     Top = 104

@@ -893,6 +893,7 @@ begin
   FGuard.Enter;
   try
     FStreamList.Add(TStreamInfo.Create(MS, 1));
+    ReleaseSemaphore(FDataSignal, 1, Nil);
   finally
     FGuard.Leave;
     FreeAndNil(CI);
@@ -934,7 +935,7 @@ begin
   inherited Destroy;
 end;
 
-function TCommonMsgClientHandler.InternalConnect;
+function TCommonMsgClientHandler.InternalConnect: Cardinal;
 begin
   Result := Winsock2.connect(FClient.FSocket, @FSockAddr, sizeof(FSockAddr));
 end;
@@ -1104,7 +1105,7 @@ begin
 
 
   ResCode := $FFFFFFFF;
-  if not Assigned(FStreamInfo) then
+  if not Assigned(FStreamInfo) and (FClient.FStreamList.Count = 0) then
   begin
     // No data to send now -> so check for FDataSignal too.
     //OutputDebugString('WFMO_1');
@@ -1149,7 +1150,7 @@ begin
                         end;
 
     WAIT_TIMEOUT:       begin
-                          if Assigned(FStreamInfo) and FCanWrite then
+                          if (Assigned(FStreamInfo) or (FClient.FStreamList.Count <> 0)) and FCanWrite then
                             HandleWrite(0)
                           else
                           if FClient.FHeartbeatInterval > 0 then
@@ -1474,10 +1475,10 @@ begin
   begin
     R := S[0] = 'T';
     SetString(Data, S + 1, Len-1);
-    if R then
-      FClient.PostAuthResult(R, Data)
-    else
-      FClient.PostClientError(Data);
+    // if R then
+    FClient.PostAuthResult(R, Data)
+    // else
+    //  FClient.PostClientError(Data);
   end;
 end;
 

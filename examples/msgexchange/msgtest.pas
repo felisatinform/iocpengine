@@ -64,9 +64,9 @@ begin
 
   FClient := TCommonMsgClient.Create(Nil);
   FServer := TCommonMsgServer.Create(Nil);
-  //FClient.HeartbeatInterval := 20;
-  //FClient.Handshake := True;
-  FClient.Host := '10.10.8.200';
+  FClient.HeartbeatInterval := 20;
+  FClient.Handshake := True;
+  FClient.Host := '127.0.0.1';
   //FClient.Host := '127.0.0.1';
   FClient.Port := 8083;
   FClient.OnConnected := Self.Client_Connected;
@@ -200,11 +200,13 @@ procedure TFrmTest.Client_DataReceived (Sender: TObject; Stream: TStream);
 var Response: AnsiString;
 begin
   LogClient('Received ' + IntToStr(Stream.Size) + ' bytes.');
+  (*
   SetLength(Response, 256);
 
   // SetLength(Response, 1024*1024*2);
   FillChar(Response[1], Length(Response), 23);
   FClient.SendString(Response);
+  *)
 end;
 
 procedure TFrmTest.Client_StreamSent (Sender: TObject; Stream: TStream);
