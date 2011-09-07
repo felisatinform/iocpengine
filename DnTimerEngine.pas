@@ -97,11 +97,16 @@ begin
 end;
 procedure TDnTimerEngine.SetActive(Value: Boolean);
 begin
-  if not FActive and Value then
-    FActive := TurnOn
-  else
-  if FActive and not Value then
-    FActive := TurnOff;
+  FGuard.Acquire;
+  try
+    if not FActive and Value then
+      FActive := TurnOn
+    else
+    if FActive and not Value then
+      FActive := TurnOff;
+  finally
+    FGuard.Release;
+  end;
 end;
 
 function TDnTimerEngine.TurnOn;
