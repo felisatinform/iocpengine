@@ -277,7 +277,8 @@ begin
 
   if FListener.Active then
     FListener.Active := False;
-  FListener.WaitForShutdown;
+
+  FListener.WaitForShutdown(5000);
 
   // DisconnectAll;
 

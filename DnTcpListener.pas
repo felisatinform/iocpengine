@@ -96,7 +96,7 @@ type
     destructor  Destroy; override;
 
     //This method can be called after Active := False to ensure all IOCP activities are stopped for this listener object
-    procedure WaitForShutdown;
+    procedure WaitForShutdown(TimeoutInMilliseconds: Cardinal = INFINITE);
 
     //This method can be called after Active := False to poll if the listener is shutdowned
     //It should NOT be mixed with WaitForShutdown - both of them resets the Win32 event
@@ -294,9 +294,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TDnTcpListener.WaitForShutdown;
+procedure TDnTcpListener.WaitForShutdown(TimeoutInMilliseconds: Cardinal);
 begin
-  Windows.WaitForSingleObject(FTurningOffSignal, INFINITE);
+  Windows.WaitForSingleObject(FTurningOffSignal, TimeoutInMilliseconds);
 end;
 
 function  TDnTcpListener.IsShutdowned: Boolean;
