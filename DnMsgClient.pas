@@ -591,7 +591,7 @@ var Msg: String;
 begin
   FGuard.Enter;
   try
-    (*Msg := 'Sending stream with size ' + IntToStr(AStream.Size);
+    (*Msg := 'FStreamList.Count = ' + IntToStr(FStreamList.Count);
     OutputDebugString(PChar(Msg));*)
     FStreamList.Add(TStreamInfo.Create(AStream, 0));
     ReleaseSemaphore(FDataSignal, 1, Nil);

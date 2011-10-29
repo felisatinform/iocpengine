@@ -289,13 +289,14 @@ begin
   FReactor.Active := False;
   FExecutor.Active := False;
   FLogger.Active := False;
-  FWinsock.Active := False;
 
   FreeAndNil(FListener);
   FreeAndNil(FReactor);
   FreeAndNil(FRequestor);
   FreeAndNil(FExecutor);
   FreeAndNil(FLogger);
+
+  FWinsock.Active := False;
   FreeAndNil(FWinsock);
 
   FActive := False;
