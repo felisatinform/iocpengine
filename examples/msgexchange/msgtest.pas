@@ -44,7 +44,7 @@ type
     procedure Client_Error (Sender: TObject; ErrorMessage: AnsiString);
     procedure Client_DataReceived (Sender: TObject; Stream: TStream);
     procedure Client_StreamSent (Sender: TObject; Stream: TStream);
-    procedure Client_AuthResult (Sender: TObject; Res: Boolean; const Msg: AnsiString);
+    procedure Client_AuthResult (Sender: TObject; Res: Boolean; const Msg: RawByteString);
     procedure Client_ListOfClients (Sender: TObject; ClientList: TObjectList);
 
   public
@@ -258,7 +258,7 @@ begin
   end;
 end;
 
-procedure TFrmTest.Client_AuthResult (Sender: TObject; Res: Boolean; const Msg: AnsiString);
+procedure TFrmTest.Client_AuthResult (Sender: TObject; Res: Boolean; const Msg: RawByteString);
 begin
   ;
 end;

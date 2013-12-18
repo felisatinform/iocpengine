@@ -1102,7 +1102,7 @@ end;
 
 function TDnFormDataParser.Parse(Buffer: PAnsiChar; BufferSize: Integer): Boolean;
 var
-    BufferIter: Integer;
+  BufferIter: Integer;
 begin
   Result := False;
 
@@ -1111,6 +1111,8 @@ begin
 
   for BufferIter :=0 to BufferSize-1 do
   begin
+    Inc(FProcessed);
+
     if FStage = dpsBoundary then
     begin
       // Cache boundary string
@@ -1233,10 +1235,9 @@ begin
         end;
       end;
     end;
-
   end;
 
-  FProcessed := BufferIter;
+  FProcessed := BufferSize;
   Result := True;
 end;
 

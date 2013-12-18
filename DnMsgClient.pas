@@ -1,8 +1,8 @@
 {$I DnConfig.inc}
 unit DnMsgClient;
 interface
-uses Classes, contnrs, SyncObjs, SysUtils,
-      Winsock2, Windows, Math,
+uses WS2, Classes, contnrs, SyncObjs, SysUtils,
+      Windows, Math,
       DnMsgClientInfo, DnRtl;
 
 
@@ -14,7 +14,7 @@ type
   TOnClientErrorEvent = procedure (Sender: TObject; ErrorMessage: AnsiString) of object;
   TOnClientDataReceivedEvent = procedure (Sender: TObject; Stream: TStream) of object;
   TOnClientStreamSentEvent = procedure (Sender: TObject; Stream: TStream) of object;
-  TOnClientAuthResultEvent = procedure (Sender: TObject; Res: Boolean; const Msg: AnsiString) of object;
+  TOnClientAuthResultEvent = procedure (Sender: TObject; Res: Boolean; const Msg: RawByteString) of object;
   TOnClientListOfClientsEvent = procedure (Sender: TObject; ClientList: TObjectList) of object;
 
 
@@ -42,7 +42,7 @@ type
     FType: TEventType;
     FClientList: TObjectList;
     FAuthResult: Boolean;
-    FAuthMsg: AnsiString;
+    FAuthMsg: RawByteString;
 
   public
     constructor Create;
@@ -52,7 +52,7 @@ type
     property Stream: TStream read FStream write FStream;
     property ClientList: TObjectList read FClientList write FClientList;
     property AuthResult: Boolean read FAuthResult write FAuthResult;
-    property AuthMsg: AnsiString read FAuthMsg write FAuthMsg;
+    property AuthMsg: RawByteString read FAuthMsg write FAuthMsg;
   end;
 
 
@@ -68,10 +68,10 @@ type
   protected
     FPort: Word;
     FHost: AnsiString;
-    FID: AnsiString;
-    FPassword: AnsiString;
-    FUser: AnsiString;
-    FVersion: AnsiString;
+    FID: RawByteString;
+    FPassword: RawByteString;
+    FUser: RawByteString;
+    FVersion: RawByteString;
     FActive: Boolean;
     FHandshake: Boolean;
     FHeartbeatInterval: Cardinal;
@@ -111,8 +111,8 @@ type
     procedure DoClientConnect;
     procedure PostClientDisconnect;
     procedure DoClientDisconnect;
-    procedure PostClientError(Msg: AnsiString);
-    procedure DoClientError(Msg: AnsiString);
+    procedure PostClientError(Msg: RawByteString);
+    procedure DoClientError(Msg: RawByteString);
     procedure PostClientListData(ClientList: TObjectList);
     procedure DoClientListData(ClientList: TObjectList);
     procedure PostAuthResult(R: Boolean; Data: RawByteString);
@@ -153,7 +153,7 @@ type
     procedure SendStream(AStream: TStream);
 
     // Initiates string sending to server
-    procedure SendString(AValue: AnsiString; AType: Word = 0);
+    procedure SendString(AValue: RawByteString; AType: Word = 0);
 
     // Fetches the list of clients from server
     procedure GetClientsListFromServer;
@@ -174,10 +174,10 @@ type
     property Port: Word read FPort write FPort;
     property Host: AnsiString read FHost write FHost;
 
-    property ID: AnsiString read FID write FID;
-    property User: AnsiString read FUser write FUser;
-    property Password: AnsiString read FPassword write FPassword;
-    property Version: AnsiString read FVersion write FVersion;
+    property ID: RawByteString read FID write FID;
+    property User: RawByteString read FUser write FUser;
+    property Password: RawByteString read FPassword write FPassword;
+    property Version: RawByteString read FVersion write FVersion;
 
     property Active: Boolean read FActive write SetActive;
 
@@ -407,7 +407,6 @@ begin
 end;
 
 destructor TEventInfo.Destroy;
-var Msg: String;
 begin
   //OutputDebugString(PChar('TEventInfo.Destroy for type ' + IntToStr(Ord(FType))));
   {$ifdef Debug_IOCP}
@@ -476,15 +475,15 @@ begin
   if FSocket <> INVALID_SOCKET then
     DestroySocket();
     
-  Winsock2.WSACleanup();
+  WS2.WSACleanup();
   inherited Destroy;
 end;
 
 procedure TCommonMsgClient.Init;
-var WSAData: Winsock2.TWSAData;
+var WSAData: WS2.TWSAData;
 begin
   // Load Winsock libraries
-  Winsock2.WSAStartup(MakeWord(2,0), WSAData);
+  WS2.WSAStartup(MakeWord(2,0), WSAData);
 
   FGuard := TCriticalSection.Create;
   FEventGuard := TCriticalSection.Create;
@@ -496,7 +495,7 @@ begin
   //FMarshallMsg := Windows.WM_USER + 100;
   FMarshallWindow := 0;
   FState := cmIdle;
-  FSocket := Winsock2.INVALID_SOCKET;
+  FSocket := WS2.INVALID_SOCKET;
   {$IFDEF USECONNECTFIBER}
   FLastSent := 0;
 {$ENDIF}
@@ -587,12 +586,9 @@ begin
 end;
 
 procedure TCommonMsgClient.SendStream(AStream: TStream);
-var Msg: String;
 begin
   FGuard.Enter;
   try
-    (*Msg := 'FStreamList.Count = ' + IntToStr(FStreamList.Count);
-    OutputDebugString(PChar(Msg));*)
     FStreamList.Add(TStreamInfo.Create(AStream, 0));
     ReleaseSemaphore(FDataSignal, 1, Nil);
   finally
@@ -600,9 +596,8 @@ begin
   end;
 end;
 
-procedure TCommonMsgClient.SendString(AValue: AnsiString; AType: Word = 0);
+procedure TCommonMsgClient.SendString(AValue: RawByteString; AType: Word = 0);
 var MS: TMemoryStream;
-    Msg: String;
 begin
   MS := TMemoryStream.Create;
   MS.Write(AValue[1], Length(AValue)); MS.Position := 0;
@@ -637,13 +632,9 @@ end;
 procedure TCommonMsgClient.PostStreamSent(SI: TStreamInfo);
 var EI: TEventInfo;
     Stream: TStream;
-    ResCode: Integer;
-    Msg: String;
 begin
   FGuard.Enter;
   try
-    //ResCode := FStreamList.Remove(SI);
-
     // Detach stream from StreamInfo object
     Stream := SI.Stream;
     SI.Stream := Nil;
@@ -722,7 +713,7 @@ begin
   end;
 end;
 
-procedure TCommonMsgClient.PostClientError(Msg: AnsiString);
+procedure TCommonMsgClient.PostClientError(Msg: RawByteString);
 var EI: TEventInfo;
 begin
   if FMarshallWindow <> 0 then
@@ -735,7 +726,7 @@ begin
     DoClientError(Msg);
 end;
 
-procedure TCommonMsgClient.DoClientError(Msg: AnsiString);
+procedure TCommonMsgClient.DoClientError(Msg: RawByteString);
 begin
   if Assigned(FOnError) then
   try
@@ -831,27 +822,26 @@ end;
 
 procedure TCommonMsgClient.DestroySocket;
 begin
-  if FSocket <> Winsock2.INVALID_SOCKET then
+  if FSocket <> WS2.INVALID_SOCKET then
   begin
-    Winsock2.shutdown(FSocket, 2);
-    Winsock2.closesocket(FSocket);
-    FSocket := Winsock2.INVALID_SOCKET;
+    WS2.shutdown(FSocket, 2);
+    WS2.closesocket(FSocket);
+    FSocket := WS2.INVALID_SOCKET;
   end;
 end;
 
 procedure TCommonMsgClient.CreateSocket;
-var NonBlock: Cardinal;
 begin
   // Create socket
-  FSocket := Winsock2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, 0);
+  FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, 0);
   if FSocket = INVALID_SOCKET then
-    raise Exception.Create(Format('Cannot create the socket. Error code is %u', [Winsock2.WSAGetLastError()]));
+    raise Exception.Create(Format('Cannot create the socket. Error code is %u', [WS2.WSAGetLastError()]));
 
   FSocketSignal.ResetEvent;
 
   // Put to WSAWait state
-  if Winsock2.WSAEventSelect(FSocket, FSocketSignal.Handle, FD_CONNECT) = SOCKET_ERROR then
-    raise Exception.Create(Format('Cannot associate socket with event. Error code is %u', [Winsock2.WSAGetLastError()]));
+  if WS2.WSAEventSelect(FSocket, FSocketSignal.Handle, FD_CONNECT) = SOCKET_ERROR then
+    raise Exception.Create(Format('Cannot associate socket with event. Error code is %u', [WS2.WSAGetLastError()]));
 end;
 
 function TCommonMsgClient.PopStreamForSending: TStreamInfo;
@@ -937,7 +927,7 @@ end;
 
 function TCommonMsgClientHandler.InternalConnect: Cardinal;
 begin
-  Result := Winsock2.connect(FClient.FSocket, @FSockAddr, sizeof(FSockAddr));
+  Result := WS2.connect(FClient.FSocket, @FSockAddr, sizeof(FSockAddr));
 end;
 
 procedure TCommonMsgClientHandler.InternalExecute;
@@ -989,7 +979,7 @@ end;
 {$ENDIF}
 
 procedure TCommonMsgClientHandler.HandleResolving;
-var HostEnt: Winsock2.PHostEnt;
+var HostEnt: WS2.PHostEnt;
     ResCode: Integer;
     PA: PAnsiChar;
 begin
@@ -998,14 +988,14 @@ begin
   // Zero all bytes of IP address
   Fillchar(FSockAddr, sizeof(FSockAddr), 0);
 
-  FSockAddr.sin_family := Winsock2.AF_INET;
-  FSockAddr.sin_port := Winsock2.htons(FClient.Port);
+  FSockAddr.sin_family := WS2.AF_INET;
+  FSockAddr.sin_port := WS2.htons(FClient.Port);
 
   // Try to convert
-  FSockAddr.sin_addr.S_addr := Winsock2.inet_addr(PAnsiChar(FClient.FHost));
+  FSockAddr.sin_addr.S_addr := WS2.inet_addr(PAnsiChar(FClient.FHost));
   if FSockAddr.sin_addr.S_addr = INADDR_NONE then
   begin //lookup need
-    HostEnt := Winsock2.GetHostByName(PAnsiChar(FClient.FHost));
+    HostEnt := WS2.GetHostByName(PAnsiChar(FClient.FHost));
     if HostEnt <> Nil then
     begin
       if HostEnt^.h_addrtype = AF_INET then
@@ -1042,9 +1032,9 @@ begin
     // Check for result code
     if ResCode = SOCKET_ERROR then
     begin
-      ResCode := Winsock2.WSAGetLastError();
+      ResCode := WS2.WSAGetLastError();
       if ResCode <> WSAEWOULDBLOCK then
-        FClient.PostClientError(AnsiString(Format('Cannot connect. Result code is %u', [ResCode])));
+        FClient.PostClientError(RawByteString(Format('Cannot connect. Result code is %u', [ResCode])));
     end;
   end;
 end;
@@ -1077,7 +1067,7 @@ end;
 procedure TCommonMsgClientHandler.HandleDisconnecting;
 begin
   if (FClient.FSocket <> INVALID_SOCKET) and FWasConnected then
-    Winsock2.shutdown(FClient.FSocket, 2);
+    WS2.shutdown(FClient.FSocket, 2);
   InternalDisconnect;
 end;
 
@@ -1088,7 +1078,7 @@ end;
 
 procedure TCommonMsgClientHandler.HandleOperable;
 var
-  ResCode, Interval: Cardinal; ErrCode, ErrCodeSize: Integer;
+  ResCode, Interval: Cardinal;
   SignalArray: array[0..2] of THandle;
   Events: TWSANetworkEvents;
 begin
@@ -1165,7 +1155,6 @@ begin
 end;
 
 procedure TCommonMsgClientHandler.HandleConnected(ErrorCode: Integer);
-var i: Integer;
 begin
   if ErrorCode <> 0 then
   begin
@@ -1219,12 +1208,12 @@ begin
   FWSABuf.buf := @FTempStorage[1]; FWSABuf.len := ClientTempStorageSize;
 
   // Try to read
-  ResCode := Winsock2.recv(FClient.FSocket, FTempStorage[1], ClientTempStorageSize, 0);
+  ResCode := WS2.recv(FClient.FSocket, FTempStorage[1], ClientTempStorageSize, 0);
 
   // Check for errors
   if ResCode = SOCKET_ERROR then
   begin
-    ResCode := Winsock2.WSAGetLastError();
+    ResCode := WS2.WSAGetLastError();
     if ResCode <> WSAEWOULDBLOCK then
     begin
       if FReadStage = crReadAll then
@@ -1250,8 +1239,8 @@ end;
 procedure TCommonMsgClientHandler.InternalClose;
 begin
   // Shutdown and closesocket. All read operations are finished now (FD_CLOSE guarantees it)
-  Winsock2.shutdown(FClient.FSocket, 2);
-  Winsock2.closesocket(FClient.FSocket);
+  WS2.shutdown(FClient.FSocket, 2);
+  WS2.closesocket(FClient.FSocket);
 
   // Mark socket as invalid
   FClient.FSocket := INVALID_SOCKET;
@@ -1294,12 +1283,12 @@ begin
   ResCode := 0;
   if FWritten < FToSend then
   begin
-    ResCode := Winsock2.send(FClient.FSocket, (FWriteTempStorage + FWritten)^, FToSend - FWritten, 0); // Use send buffer
+    ResCode := WS2.send(FClient.FSocket, (FWriteTempStorage + FWritten)^, FToSend - FWritten, 0); // Use send buffer
     FLastSentHeartBeat := Now;
 
     if ResCode = SOCKET_ERROR then
     begin
-      if Winsock2.WSAGetLastError() = WSAEWOULDBLOCK then
+      if WS2.WSAGetLastError() = WSAEWOULDBLOCK then
         FCanWrite := False
       else
         FClient.PostClientError(AnsiString(Format('Winsock2.send() failed. Error code is %u', [WSAGetLastError()])));
@@ -1353,7 +1342,7 @@ begin
   FLastHeartbeat := Now;
 
   // Well, read is guaranteed to success
-  ResCode := Winsock2.recv(FClient.FSocket, FTempStorage^, ClientTempStorageSize, 0);
+  ResCode := WS2.recv(FClient.FSocket, FTempStorage^, ClientTempStorageSize, 0);
   if ResCode = SOCKET_ERROR then
     FClient.PostClientError(AnsiString(Format('Cannot recv. Error code is %u', [WSAGetLastError()])))
   else
@@ -1520,7 +1509,6 @@ end;
 
 procedure TCommonMsgClientHandler.ProcessClientData(S: PAnsiChar; Len: Cardinal);
 var MS: TStream;
-    EI: TEventInfo;
 begin
   If S <> Nil then
   begin
@@ -1551,7 +1539,7 @@ end;
 
 procedure TCommonMsgClientHandler.HandleError;
 begin
-  FClient.PostClientError(AnsiString(Format('Network error occured. Error code is %u', [Winsock2.WSAGetLastError()])));
+  FClient.PostClientError(AnsiString(Format('Network error occured. Error code is %u', [WS2.WSAGetLastError()])));
 end;
 
 procedure TCommonMsgClientHandler.LogMsg(S: AnsiString);

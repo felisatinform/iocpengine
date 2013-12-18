@@ -1,7 +1,7 @@
 {$I DnConfig.inc}
 unit DnTcpChannel;
 interface
-uses Winsock2, contnrs, Windows, Classes, SysUtils,
+uses WS2, contnrs, Windows, Classes, SysUtils,
       DnRtl, DnTcpRequest, DnConst, DnAbstractExecutor, DnDataDecorator,
       DnDataQueue;
 
@@ -25,7 +25,7 @@ type
     FRunGuard:            TDnMutex;
 
     FTracker:             Pointer;
-    FCache:               AnsiString;
+    FCache:               RawByteString;
     FCustomData:          TObject;
     FFinishedIOCount:     Cardinal;
 
@@ -233,7 +233,7 @@ begin
   inherited Create;
   FRunGuard := TDnMutex.Create;
   FReactor := Reactor;
-  FSocket := Winsock2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
+  FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FSocket = INVALID_SOCKET then
     raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'WSASocket');
 
@@ -253,7 +253,7 @@ end;
 constructor TDnTcpChannel.CreateEmpty;
 begin
   inherited Create;
-  FSocket := Winsock2.INVALID_SOCKET;
+  FSocket := WS2.INVALID_SOCKET;
 
   InitChannel;
 end;
@@ -268,7 +268,7 @@ begin
   FRemoteAddr.sin_port := htons(RemotePort);
   FRemoteAddr.sin_family := AF_INET;
   FClient := True;
-  FSocket := Winsock2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
+  FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
   InitChannel;
 end;
 
@@ -503,8 +503,8 @@ begin
   try
     if FSocket <> INVALID_SOCKET then
     begin
-      Winsock2.shutdown(FSocket, SD_SEND);
-      Winsock2.closesocket(FSocket);
+      WS2.shutdown(FSocket, SD_SEND);
+      WS2.closesocket(FSocket);
       FSocket := INVALID_SOCKET;
     end;
   finally
@@ -528,7 +528,7 @@ procedure TDnTcpChannel.SetNagle(Value: Boolean);
 var Temp: LongBool;
 begin
   Temp := Value;
-  Winsock2.setsockopt(FSocket, IPPROTO_TCP, TCP_NODELAY, PChar(@Temp), SizeOf(Temp));
+  WS2.setsockopt(FSocket, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@Temp), SizeOf(Temp));
 end;
 
 procedure TDnTcpChannel.DeleteRequest(Request: TDnTcpRequest);

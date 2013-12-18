@@ -48,7 +48,7 @@
 // converted by Alex Konshin, mailto:alexk@mtgroup.ru
 // modified March,4 2000
 
-unit WinSock2;
+unit WS2;
 
 interface
 
@@ -132,20 +132,20 @@ const
 type
   PHostEnt = ^THostEnt;
   THostEnt = packed record
-    h_name: PChar;                 // official name of host
-    h_aliases: ^PChar;             // alias list
+    h_name: PAnsiChar;                 // official name of host
+    h_aliases: ^PAnsiChar;             // alias list
     h_addrtype: Smallint;          // host address type
     h_length: Smallint;            // length of address
     case Byte of
-      0: (h_addr_list: ^PChar);    // list of addresses
-      1: (h_addr: ^PChar);         // address, for backward compat
+      0: (h_addr_list: ^PAnsiChar);    // list of addresses
+      1: (h_addr: ^PAnsiChar);         // address, for backward compat
   end;
 
 //  It is assumed here that a network number
 //  fits in 32 bits.
   PNetEnt = ^TNetEnt;
   TNetEnt = packed record
-    n_name: PChar;                 // official name of net
+    n_name: PAnsiChar;                 // official name of net
     n_aliases: ^PChar;             // alias list
     n_addrtype: Smallint;          // net address type
     n_net: u_long;                 // network #
@@ -1246,7 +1246,7 @@ function recvfrom(s: TSocket; var Buf; len, flags: Integer; var from: TSockAddr;
 function select(nfds: Integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Integer; stdcall;
 function send(s: TSocket; var Buf; len, flags: Integer): Integer; stdcall;
 function sendto(s: TSocket; var Buf; len, flags: Integer; var addrto: TSockAddr; tolen: Integer): Integer; stdcall;
-function setsockopt(s: TSocket; level, optname: Integer; optval: PChar; optlen: Integer): Integer; stdcall;
+function setsockopt(s: TSocket; level, optname: Integer; optval: PAnsiChar; optlen: Integer): Integer; stdcall;
 function shutdown(s: TSocket; how: Integer): Integer; stdcall;
 function socket( const af, struct, protocol: Integer ): TSocket; stdcall;
 function gethostbyaddr(addr: Pointer; len, struct: Integer): PHostEnt; stdcall;

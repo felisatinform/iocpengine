@@ -1,7 +1,6 @@
 program SimpleHttpServer;
 
 uses
-  FastMM4,
   Forms,
   GUIPart in 'GUIPart.pas' {FrmGUI},
   FolderSelectPart in 'FolderSelectPart.pas' {FrmFolderSelect},

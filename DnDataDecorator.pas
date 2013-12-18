@@ -20,9 +20,9 @@ type
 
     procedure   Connect; virtual; abstract;
     procedure   SendData(BufPtr: Pointer; BufSize: Integer); overload; virtual; abstract;
-    procedure   SendData(Buffer: AnsiString); overload;
+    procedure   SendData(Buffer: RawByteString); overload;
     procedure   ReceiveData(BufPtr: Pointer; BufSize: Integer); overload; virtual; abstract;
-    procedure   ReceiveData(Buffer: AnsiString); overload;
+    procedure   ReceiveData(Buffer: RawByteString); overload;
     procedure   Close; virtual; abstract;
 
     function    ExtractRawData(MaxSize: Cardinal = $FFFFFFFF): AnsiString; virtual; abstract;
@@ -51,12 +51,12 @@ begin
   inherited Destroy;
 end;
 
-procedure TDnDataDecorator.SendData(Buffer: AnsiString);
+procedure TDnDataDecorator.SendData(Buffer: RawByteString);
 begin
   Self.SendData(@Buffer[1], Length(Buffer));
 end;
 
-procedure TDnDataDecorator.ReceiveData(Buffer: AnsiString);
+procedure TDnDataDecorator.ReceiveData(Buffer: RawByteString);
 begin
   Self.ReceiveData(@Buffer[1], Length(Buffer));
 end;

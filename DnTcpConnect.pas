@@ -11,7 +11,7 @@
 unit DnTcpConnect;
 interface
 uses
-  Windows, Classes, Winsock2, SysUtils, Contnrs, Math,
+  WS2, Windows, Classes, SysUtils, Contnrs, Math,
   DnTcpReactor, DnRtl, DnAbstractExecutor, DnAbstractLogger,
   DnConst, DnTcpChannel, DnTcpRequest;
 
@@ -194,7 +194,7 @@ begin
   else
   begin
     //check if error occured
-    if (Winsock2.WSAEnumNetworkEvents(ChannelImpl.SocketHandle, Request.FConnectSignal,
+    if (WS2.WSAEnumNetworkEvents(ChannelImpl.SocketHandle, Request.FConnectSignal,
                                 @networkEvents) = SOCKET_ERROR) then
       Request.FErrorCode := WSAGetLastError
     else
@@ -436,7 +436,7 @@ begin
   FStartTick := CurrentTimeFromLaunch();
 
   //associate the request with Win32 event handle
-  Winsock2.WSAEventSelect(ChannelImpl.SocketHandle, FConnectSignal, FD_CONNECT);
+  WS2.WSAEventSelect(ChannelImpl.SocketHandle, FConnectSignal, FD_CONNECT);
 
   //initiate connection
   ResCode := WSAConnect(ChannelImpl.SocketHandle, ChannelImpl.RemoteAddrPtr,
@@ -494,7 +494,7 @@ destructor  TDnTcpConnectRequest.Destroy;
 begin
   if FConnectSignal <> 0 then
   begin
-    Winsock2.WSACloseEvent(FConnectSignal);
+    WS2.WSACloseEvent(FConnectSignal);
     FConnectSignal := 0;
   end;
   inherited Destroy;

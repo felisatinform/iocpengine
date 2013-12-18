@@ -18,9 +18,9 @@ uses
   DnRtl, DnConst, DnSimpleExecutor,
   DnAbstractExecutor, DnAbstractLogger,
   DnTcpRequest, DnInterfaces, DnTcpChannel, DnTimerEngine, ComObj, ActiveX
-{$IFDEF ENABLE_STREAMSEC}
+{$ifdef ENABLE_STREAMSEC}
   , StreamSecII, TlsClass
-{$ENDIF}
+{$endif}
   ;
 
 type
@@ -693,7 +693,11 @@ end;
 procedure TDnTcpReactorThread.ThreadRoutine;
 var
   Transferred: Cardinal;
+  {$if CompilerVersion <= 22}
   Key: Cardinal;
+  {$else}
+  Key: NativeUInt;
+  {$ifend}
   Overlapped: POverlapped;
   ResCode: LongBool;
 begin

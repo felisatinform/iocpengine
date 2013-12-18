@@ -13,13 +13,18 @@ unit DnRtl;
 interface
 uses
   SysUtils, Windows, Contnrs, Classes,
-  DnConst;
+  DnConst, Winsock2;
 
 
 type
-{$IF NOT DEFINED(VER200) AND NOT DEFINED(VER210) AND NOT DEFINED(VER190) }
+
+{$if CompilerVersion < 20}
   RawByteString = AnsiString;
-{$IFEND}
+{$ifend}
+
+{$if CompilerVersion <= 18.5}
+  NativeUInt = Cardinal;
+{$ifend}
 
   EDnException = class(Exception)
   protected
@@ -143,6 +148,8 @@ type
     Second:       Word;
     Milliseconds: Word;
   end;
+
+  PSockAddrIn = ^Winsock2.TSockAddrIn;
 
 procedure DateTimeToDateRec(DT: TDateTime; var DRec: TDnDateRec);
 function  DateRecToDateTime(var DRec: TDnDateRec): TDateTime;

@@ -351,7 +351,7 @@ procedure TDnTcpReadRequest.Init(Channel: TDnTcpChannel; Key: Pointer;
                                   BufSize: Cardinal; MustAll: Boolean = True);
 begin
   FWSABuf.Len := BufSize;
-  FWSABuf.Buf := PByte(Buf);
+  FWSABuf.Buf := PAnsiChar(Buf);
   FRead := 0;
   FToRead := BufSize;
   FFlags := 0;
@@ -685,7 +685,7 @@ begin
   inherited Create(Channel, Key);
 
   FWSABuf.Len := BufSize;
-  FWSABuf.Buf := PByte(Buf);
+  FWSABuf.Buf := PAnsiChar(Buf);
   FWritten := 0;
   FToWrite := BufSize;
   FFlags := 0;

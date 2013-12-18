@@ -20,7 +20,7 @@ type
     procedure   Lock;
     procedure   Unlock;
     procedure   Append(Buf: Pointer; Size: Integer);
-    procedure   AppendString(const S: AnsiString);
+    procedure   AppendString(const S: RawByteString);
     procedure   AppendFromStream(Stream: TStream; Size: Integer);
     function    Extract(Buf: Pointer; Size: Integer): Integer;
     function    Delete(Size: Integer): Integer;
@@ -94,7 +94,7 @@ begin
   Inc(FSize, Size);
 end;
 
-procedure TDnDataQueue.AppendString(const S: AnsiString);
+procedure TDnDataQueue.AppendString(const S: RawByteString);
 begin
   Self.Append(@S[1], Length(S));
 end;
