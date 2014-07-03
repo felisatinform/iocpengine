@@ -572,6 +572,9 @@ end;
 procedure TCommonMsgServer.SendStream(AStream: TStream; AClientId: RawByteString);
 var Client: TClientRec;
 begin
+  if not Assigned(AStream) then
+    Exit;
+	
   //find client record and send stream
   if GetClientById(AClientId, Client) then
     InternalSend(Client, AStream.Size, 0, AStream);
@@ -581,6 +584,9 @@ end;
 procedure TCommonMsgServer.SendStream(AStream: TStream; AClientIndex: Integer);
 var Client: TClientRec;
 begin
+  if not Assigned(AStream) then
+    Exit;
+	
   //find client record and send stream
   if GetClientByIndex(AClientIndex, Client) then
     InternalSend(Client, AStream.Size, 0, AStream);
