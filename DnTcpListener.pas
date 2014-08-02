@@ -166,6 +166,8 @@ begin
   end;
 end;
 
+const
+ MY_SO_UPDATE_ACCEPT_CONTEXT = $700B;
 procedure TDnTcpAcceptRequest.CallHandler(Context: TDnThreadContext);
 var Channel: TDnTcpChannel;
     ResCode, LocalAddrLen, RemoteAddrLen: Integer;
@@ -179,26 +181,26 @@ begin
     begin
       LocalAddrLen := Sizeof(TSockAddrIn); RemoteAddrLen := Sizeof(TSockAddrIn);
 
-      //UPDATE_ACCEPT_CONTEXT
-      ResCode := WS2.setsockopt(FAcceptSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, PAnsiChar(@FListener.FSocket), sizeof(FListener.FSocket));
+      // UPDATE_ACCEPT_CONTEXT
+      ResCode := WS2.setsockopt(FAcceptSocket, SOL_SOCKET, MY_SO_UPDATE_ACCEPT_CONTEXT, PAnsiChar(@FListener.FSocket), sizeof(FListener.FSocket));
       if ResCode <> 0 then
         FListener.FLogger.LogMsg(llMandatory, Format('setSockOpt with SO_UPDATE_ACCEPT_CONTEXT is failed. Error code is %d.', [WS2.WSAGetLastError()]));
-         
-      //extract addresses
+
+      // Extract addresses
       GetAcceptExSockaddrs(@FAcceptBuffer[1], 0, sizeof(TSockAddrIn)+16,
           sizeof(TSockAddrIn)+16, LocalAddrP, LocalAddrLen,
           RemoteAddrP, RemoteAddrLen); //}//there was a good idea but it is not working so just KISS :)
 
 
-      FLocalAddr := LocalAddrP^;
-      FRemoteAddr := RemoteAddrP^;
+      FLocalAddr := PSockAddrIn(LocalAddrP)^;
+      FRemoteAddr := PSockAddrIn(RemoteAddrP)^;
 
       Channel := FListener.DoCreateChannel(Context, FAcceptSocket, FRemoteAddr);
 
-      //post channel to reactor
+      // Post channel to reactor
       FListener.FReactor.PostChannel(Channel);
 
-      //fire event for new connection
+      // Fire event for new connection
       FListener.DoClientConnect(Context, Channel);
     end
     else
@@ -207,13 +209,13 @@ begin
 
     FListener.RequestFinished;
 
-    //re-execute the request if it is possible
+    // Re-execute the request if it is possible
     if not FListener.FActive then
     begin
-      //we are in shutdown process
+      // We are in shutdown process
       Windows.SetEvent(FListener.FTurningOffSignal);
 
-      //exit from procedure
+      // Exit from procedure
       Exit;
     end;
 
@@ -279,13 +281,10 @@ end;
 
 destructor TDnTcpListener.Destroy;
 begin
-  if not FActive then
-    Exit;
-
   if Active then
     Active := False;
 
-  //wait while acceptex query will finish
+  // Wait while acceptex query will finish
   Windows.WaitForSingleObject(FTurningOffSignal, INFINITE);
 
   FreeAndNil(FRequest);
@@ -339,7 +338,7 @@ begin
   try
     FLogger.LogMsg(FLogLevel, Msg);
   except
-    ; //suppress exception
+    ; // Suppress exception
   end
 end;
 
@@ -360,8 +359,8 @@ function TDnTcpListener.TurnOn: Boolean;
 var TempBool: LongBool;
 begin
   FActive := True;
-  
-  //create listening socket
+
+  // Create listening socket
   FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FSocket = INVALID_SOCKET then
     raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'WSASocket');
@@ -370,22 +369,21 @@ begin
   FAddr.sin_port := WS2.htons(FPort);
   FAddr.sin_addr.S_addr := inet_addr(PAnsiChar(FAddress));
 
-  //associate with completion port
+  // Associate with completion port
   CreateIOCompletionPort(FSocket, FReactor.PortHandle, 0, 1);
 
-  //Set SO_REUSEADDR
+  // Set SO_REUSEADDR
   TempBool := True;
   SetSockOpt(FSocket, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@TempBool), SizeOf(TempBool));
 
-  //bind socket
-  if WS2.Bind(TSocket(FSocket), PSockAddr(@FAddr), sizeof(FAddr)) = -1 then
+  // Bind socket
+  if WS2.Bind(TSocket(FSocket), @FAddr, sizeof(FAddr)) = -1 then
     raise EDnException.Create(ErrWin32Error, WSAGetLastError, Format('Bind failed. Port is %d', [FPort]));
 
   if WS2.Listen(FSocket, FBackLog) = -1 then
     raise EDnException.Create(ErrWin32Error, WSAGetLastError(), Format('Listen failed. Port is %d.', [FPort]));
 
-  
-  //queue AcceptEx request
+  // Queue AcceptEx request
   QueueRequest;
 
   Result := True;
@@ -474,11 +472,7 @@ begin
   end;
 end;
 
-
-
 //------------------------------------------------------------------------------
-
-
 
 procedure Register;
 begin

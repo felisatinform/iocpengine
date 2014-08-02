@@ -14,14 +14,14 @@ unit DnTcpReactor;
 interface
 
 uses
-  Windows, Winsock2, SysUtils, Classes, Contnrs,
+  Windows, SysUtils, Classes, Contnrs,
   DnRtl, DnConst, DnSimpleExecutor,
   DnAbstractExecutor, DnAbstractLogger,
   DnTcpRequest, DnInterfaces, DnTcpChannel, DnTimerEngine, ComObj, ActiveX
 {$ifdef ENABLE_STREAMSEC}
   , StreamSecII, TlsClass
 {$endif}
-  ;
+  , WS2;
 
 type
   TDnTcpReactor = class;
@@ -337,18 +337,18 @@ begin
   FChannelPosted := 0;
 
 
-  TempSocket := Winsock2.socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-  if TempSocket = Winsock2.INVALID_SOCKET then
+  TempSocket := WS2.socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+  if TempSocket = WS2.INVALID_SOCKET then
     raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'Socket');
 
   FPort := CreateIOCompletionPort(TempSocket, 0, 0, 1);
   if FPort = 0 then
   begin
-    Winsock2.closesocket(TempSocket);
+    WS2.closesocket(TempSocket);
     raise EDnException.Create(ErrWin32Error, GetLastError(),
       'CreateIOCompletionPort');
   end;
-  Winsock2.closesocket(TempSocket);
+  WS2.closesocket(TempSocket);
 
   FTimer := TDnTimerEngine.Create;
   FTimer.TimerSink := Self;

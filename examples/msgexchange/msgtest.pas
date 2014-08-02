@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Contnrs, DnMsgClient, DnMsgServer, ExtCtrls, SyncObjs;
+  Dialogs, StdCtrls, Contnrs, DnMsgClient, DnMsgServer, DnRtl, ExtCtrls, SyncObjs;
 
 type
   TFrmTest = class(TForm)
@@ -20,6 +20,7 @@ type
     procedure BtDisconnectClick(Sender: TObject);
     procedure TmrSendTimer(Sender: TObject);
     procedure TmrLogTimer(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
 
   private
     FServer: TCommonMsgServer;
@@ -88,6 +89,14 @@ begin
   FServer.OnStreamSent := Self.Server_StreamSent;
 
   TmrLog.Enabled := True;
+end;
+
+procedure TFrmTest.FormDestroy(Sender: TObject);
+begin
+  FreeAndNil(FClient);
+  FreeAndNil(FServer);
+  FreeAndNil(FLog);
+  FreeAndNil(FLogGuard);
 end;
 
 procedure TFrmTest.LogServer(const S: String);
@@ -193,7 +202,7 @@ end;
 
 procedure TFrmTest.Client_Error (Sender: TObject; ErrorMessage: AnsiString);
 begin
-  LogClient('client error ' + ErrorMessage);
+  LogClient('client error ' + String(ErrorMessage));
 end;
 
 procedure TFrmTest.Client_DataReceived (Sender: TObject; Stream: TStream);

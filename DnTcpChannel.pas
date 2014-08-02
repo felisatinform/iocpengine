@@ -264,7 +264,7 @@ begin
   FRemotePort := RemotePort;
   
   FillChar(FRemoteAddr, 0, SizeOf(FRemoteAddr));
-  FRemoteAddr.sin_addr.S_addr := inet_addr(PAnsiChar(RemoteIP));
+  FRemoteAddr.sin_addr.S_addr := WS2.inet_addr(PAnsiChar(RemoteIP));
   FRemoteAddr.sin_port := htons(RemotePort);
   FRemoteAddr.sin_family := AF_INET;
   FClient := True;

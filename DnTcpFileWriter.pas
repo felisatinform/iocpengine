@@ -11,7 +11,7 @@
 {$I DnConfig.inc}
 unit DnTcpFileWriter;
 interface
-uses  Classes, Windows, Winsock2, SysUtils,
+uses  Classes, Windows, WS2, SysUtils,
       DnRtl, DnConst, DnInterfaces, DnTcpAbstractRequestor,
       DnTcpReactor, DnTcpWriteFile, DnTcpChannel;
 type

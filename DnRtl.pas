@@ -12,9 +12,7 @@ unit DnRtl;
 
 interface
 uses
-  SysUtils, Windows, Contnrs, Classes,
-  DnConst, Winsock2;
-
+  SysUtils, Windows, Contnrs, Classes, DnConst, WS2;
 
 type
 
@@ -129,7 +127,7 @@ type
   protected
     FRefCount: Integer;
   public
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface(const IID: System.TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
 
@@ -149,8 +147,8 @@ type
     Milliseconds: Word;
   end;
 
-  PSockAddrIn = ^Winsock2.TSockAddrIn;
-
+  PSockAddrIn = ^TSockAddrIn;
+  
 procedure DateTimeToDateRec(DT: TDateTime; var DRec: TDnDateRec);
 function  DateRecToDateTime(var DRec: TDnDateRec): TDateTime;
 
@@ -499,7 +497,7 @@ begin
   inherited Destroy;
 end;
 
-function TDnObject.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TDnObject.QueryInterface(const IID: System.TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
     Result := S_OK

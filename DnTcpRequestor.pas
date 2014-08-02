@@ -15,7 +15,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Winsock2,
+  WS2,
   DnConst, DnRtl, DnTcpReactor, DnTcpAbstractRequestor,
   DnTcpRequests, DnTcpChannel, DnTcpRequest, DnDataQueue
 {$IFDEF ENABLE_DECORATOR}
@@ -25,9 +25,9 @@ uses
 
 type
   TDnTcpRead =          procedure (Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal) of object;
+                          Buf: PByte; BufSize: Cardinal) of object;
   TDnTcpWrite =         procedure (Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                           Buf: PAnsiChar; BufSize: Cardinal) of object;
+                           Buf: PByte; BufSize: Cardinal) of object;
   TDnTcpWriteStream =   procedure (Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
                            Stream: TStream) of object;
   TDnTcpError =         procedure (Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
@@ -60,7 +60,7 @@ type
 
     //IDnTcpReadHandler
     procedure DoRead(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
     procedure DoReadError(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
                            ErrorCode: Cardinal);
     procedure DoReadClose(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer);
@@ -71,7 +71,7 @@ type
 
     //IDnTcpWriteHandler
     procedure DoWrite(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                           Buf: PAnsiChar; BufSize: Cardinal);
+                           Buf: PByte; BufSize: Cardinal);
     procedure DoWriteError(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
                            ErrorCode: Cardinal);
     procedure DoWriteStream(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
@@ -98,10 +98,10 @@ type
   public
     constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent);override{$ENDIF};
     destructor Destroy; override;
-    procedure Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; BufSize: Cardinal);
+    procedure Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
     procedure ReadString(Channel: TDnTcpChannel; Key: Pointer; Size: Integer);
-    procedure RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; MaxSize: Cardinal);
-    procedure Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar;  BufSize: Cardinal);
+    procedure RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; MaxSize: Cardinal);
+    procedure Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte;  BufSize: Cardinal);
     procedure WriteString(Channel: TDnTcpChannel; Key: Pointer; Buf: RawByteString);
     procedure WriteStream(Channel: TDnTcpChannel; Key: Pointer; Stream: TStream);
     //procedure WriteQueue(Channel: TDnTcpChannel; Key: Pointer; Queue: TDnDataQueue);
@@ -148,7 +148,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TDnTcpRequestor.Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TDnTcpRequestor.Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
 var Request: TDnTcpRequest;
 begin
   if not CheckAvail then
@@ -166,15 +166,13 @@ var Request: TDnTcpRequest;
 begin
   if not CheckAvail then
     Exit;
-
-
   Request := TDnTcpReadRequest.CreateString(Channel, Key, Self, Size);
 
   if Assigned(Request) then
     Channel.RunRequest(Request);
 end;
 
-procedure TDnTcpRequestor.RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; MaxSize: Cardinal);
+procedure TDnTcpRequestor.RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; MaxSize: Cardinal);
 var Request: TDnTcpRequest;
 begin
   if not CheckAvail then
@@ -186,7 +184,7 @@ begin
     Channel.RunRequest(Request);
 end;
 
-procedure TDnTcpRequestor.Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TDnTcpRequestor.Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
 var Request: TDnTcpRequest;
 
 begin
@@ -260,7 +258,7 @@ begin
 end;
 
 procedure TDnTcpRequestor.DoRead( Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                                  Buf: PAnsiChar; BufSize: Cardinal);
+                                  Buf: PByte; BufSize: Cardinal);
 begin
   try
     if Assigned(FTcpRead) then
@@ -289,7 +287,7 @@ begin
 end;
 
 procedure TDnTcpRequestor.DoWrite(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                                  Buf: PAnsiChar; BufSize: Cardinal);
+                                  Buf: PByte; BufSize: Cardinal);
 begin
   try
     if Assigned(FTcpWrite) then

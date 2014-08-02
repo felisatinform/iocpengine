@@ -1,7 +1,7 @@
 unit DnTcpRequest;
 interface
-uses Winsock2, Windows, Classes, SysUtils,
-      DnRtl, DnConst;
+uses Windows, Classes, SysUtils, DnRtl, DnConst,
+  WS2;
 
 const
   GDnIORequestType: array [0..15] of String =

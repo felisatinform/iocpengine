@@ -1,7 +1,7 @@
 unit DnDataQueue;
 interface
 uses
-  Classes, SysUtils, Windows, SyncObjs, Math;
+  Classes, SysUtils, Windows, SyncObjs, Math, DnRtl;
 
 type
   TDnDataQueue = class

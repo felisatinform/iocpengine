@@ -1,9 +1,9 @@
 object FrmTest: TFrmTest
-  Left = 0
-  Top = 0
+  Left = 390
+  Top = 282
+  Width = 511
+  Height = 470
   Caption = 'Msg test'
-  ClientHeight = 438
-  ClientWidth = 483
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,6 +12,7 @@ object FrmTest: TFrmTest
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 120
   TextHeight = 17
   object BtServer: TButton
@@ -19,10 +20,6 @@ object FrmTest: TFrmTest
     Top = 10
     Width = 99
     Height = 33
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Caption = 'Start server'
     TabOrder = 0
     OnClick = BtServerClick
@@ -32,10 +29,6 @@ object FrmTest: TFrmTest
     Top = 10
     Width = 98
     Height = 33
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Caption = 'Start client'
     TabOrder = 1
     OnClick = BtClientClick
@@ -45,10 +38,6 @@ object FrmTest: TFrmTest
     Top = 51
     Width = 416
     Height = 377
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     ScrollBars = ssVertical
     TabOrder = 2
   end

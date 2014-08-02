@@ -2,7 +2,7 @@
 unit DnDnsRequestor;
 interface
 uses
-  Classes, SysUtils, Types, Contnrs, Winsock2, Windows,
+  Classes, SysUtils, Types, Contnrs, WS2, Windows,
   DnRtl, DnTcpAbstractRequestor;
 
 type
@@ -173,9 +173,9 @@ begin
         FGuard.Release;
       end;
 
-      HostEnt := Winsock2.gethostbyname(PAnsiChar(AnsiString(Request.HostName)));
+      HostEnt := WS2.gethostbyname(PAnsiChar(AnsiString(Request.HostName)));
       if HostEnt = Nil then
-        Request.ErrorCode := Winsock2.WSAGetLastError
+        Request.ErrorCode := WS2.WSAGetLastError
       else
       begin
       //copy resulting IP address
@@ -184,7 +184,7 @@ begin
         SockAddr.sin_addr.S_un_b.s_b2 := Ord(pa[1]);
         SockAddr.sin_addr.S_un_b.s_b3 := Ord(pa[2]);
         SockAddr.sin_addr.S_un_b.s_b4 := Ord(pa[3]);
-        Request.FIP := Winsock2.inet_ntoa(SockAddr.sin_addr);
+        Request.FIP := WS2.inet_ntoa(SockAddr.sin_addr);
       end;
 
       //fire event
@@ -250,10 +250,10 @@ begin
 end;
 
 class function TDnDnsRequestor.IsIPAddress(const S: AnsiString): Boolean;
-var Addr: Winsock2.TInAddr;
+var Addr: WS2.TInAddr;
 begin
-  Addr.S_addr := Winsock2.inet_addr(PChar(S));
-  Result :=  Addr.S_addr <> Winsock2.INADDR_NONE;
+  Addr.S_addr := WS2.inet_addr(PChar(S));
+  Result :=  Addr.S_addr <> WS2.INADDR_NONE;
 end;
 
 end.

@@ -8,7 +8,7 @@ uses WS2, Classes, contnrs, SyncObjs, SysUtils,
 
 const
   ClientTempStorageSize = 8192;
-  MaxMessageSize = 1024 * 1024 * 10; //10Mb
+  MaxMessageSize = 1024 * 1024 * 50; //50Mb
 
 type
   TOnClientErrorEvent = procedure (Sender: TObject; ErrorMessage: AnsiString) of object;
@@ -238,7 +238,7 @@ type
     FCanWrite: Boolean;
 
     //the remote peer IP address
-    FSockAddr: TSockAddrIn;
+    FSockAddr: WS2.TSockAddrIn;
 
     //the temporary storage for send operation
     FWriteTempStorage,

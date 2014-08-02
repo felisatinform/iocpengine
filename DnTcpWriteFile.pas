@@ -10,7 +10,7 @@
 // rights and limitations under the License.
 unit DnTcpWriteFile;
 interface
-uses  Windows, Winsock2,
+uses  Windows, WS2,
       DnRtl, DnConst,
       DnTcpReactor, DnTcpChannel, DnTcpRequest;
 
@@ -166,7 +166,7 @@ var ResCode: Integer;
 begin
   inherited Execute;
   ChannelImpl := FChannel as TDnTcpChannel;
-  ResCode := Winsock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   //ResCode := Integer(WriteFileEx(ChannelImpl.SocketHandle, @FWSABuf , FWritten, FContext.FOverlapped, Nil));
   if ResCode = 0 then
   begin //WSASend completed immediately

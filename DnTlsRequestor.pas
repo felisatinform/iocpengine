@@ -14,7 +14,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Winsock2,
+  WS2,
   DnConst, DnRtl, DnInterfaces, DnTcpReactor, DnTcpAbstractRequestor,
   DnTlsRequests, DnTcpRequests, DnTcpRequestor, DnTcpChannel, DnTcpRequest,
   DnAbstractLogger,

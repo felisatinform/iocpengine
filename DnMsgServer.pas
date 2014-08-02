@@ -18,6 +18,8 @@ type
 
   //Represents client in server class
   TClientRec = class(TMsgClientInfo)
+  private
+    FProcessingThrd: TObject;
   protected
     //the current state of read operation
     FReadStage: TClientReadStage;
@@ -48,6 +50,9 @@ type
     property ReadMsgType: Word read FReadMsgType write FReadMsgType;
     property Channel: TDnTcpChannel read FChannel write FChannel;
     property Shutdown: Boolean read FShutdown write FShutdown;
+
+    //property Connection: TObject read FConnection write FConnection;
+    property ProcessingThrd: TObject read FProcessingThrd write FProcessingThrd;
   end;
 
   //occurs when client is connected
@@ -102,27 +107,27 @@ type
     procedure TcpRequestorTcpClientClose(Context: TDnThreadContext;
       Channel: TDnTcpChannel; Key: Pointer);
     procedure TcpRequestorTcpRead(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
     procedure TcpRequestorTcpWrite(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
     procedure TcpRequestorTcpWriteStream(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
                           Stream: TStream);
     procedure HandleTimeout(Context: TDnThreadContext; Channel: TDnTcpChannel);
     procedure SetActive(AValue: Boolean);
     procedure DoDisconnected(Client: TClientRec);
     procedure DoConnected(Client: TClientRec);
-    procedure DoDataReceived(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
-    procedure DoHandshake(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
-    procedure DoClientList(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
-    procedure DoHeartbeat(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+    procedure DoDataReceived(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
+    procedure DoHandshake(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
+    procedure DoClientList(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
+    procedure DoHeartbeat(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
     procedure DoError(Client: TClientRec; const Msg: String);
     procedure DoStreamSent(Client: TClientRec; Stream: TStream);
-    procedure DoBufferSent(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+    procedure DoBufferSent(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
     procedure SendHeader(Client: TClientRec; Len: Cardinal; _Type: Word = 0);
     procedure InternalSend(Client: TClientRec; Len: Cardinal; _Type: Word; Stream: TStream); overload;
     procedure InternalSend(Client: TClientRec; Len: Cardinal; _Type: Word; Buf: RawByteString); overload;
-    procedure HandleHeaderRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
-    procedure HandleBodyRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+    procedure HandleHeaderRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PByte; BufSize: Cardinal);
+    procedure HandleBodyRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 
   public
 {$IFDEF ROOTISCOMPONENT}
@@ -180,6 +185,8 @@ begin
   inherited Create;
 
   FSendGuard := TCriticalSection.Create;
+
+  FProcessingThrd := nil;
 end;
 
 destructor TClientRec.Destroy;
@@ -345,7 +352,7 @@ begin
   FRequestor.ReadString(Channel, Client, sizeof(TMsgHeader));
 end;
 
-procedure TCommonMsgServer.HandleHeaderRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.HandleHeaderRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 var Header: TMsgHeader;
 begin
   //check the size of received data - we can do it as read request reads ALL requested bytes
@@ -388,7 +395,7 @@ begin
   end;
 end;
 
-procedure TCommonMsgServer.HandleBodyRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.HandleBodyRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 begin
   if Client.ReadMsgSize <> BufSize then
   begin
@@ -421,7 +428,7 @@ begin
 end;
 
 procedure TCommonMsgServer.TcpRequestorTcpRead(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                            Buf: PAnsiChar; BufSize: Cardinal);
+                            Buf: PByte; BufSize: Cardinal);
 var Client: TClientRec;
 begin
   if FShutdown then
@@ -447,7 +454,7 @@ begin
   Self.DoError(TClientRec(Channel.CustomData), 'I/O timeouted.');
 end;
 
-procedure TCommonMsgServer.DoDataReceived(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.DoDataReceived(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 var MS: TMemoryStream;
 begin
   //if event handler is not zero
@@ -745,14 +752,14 @@ const
   AuthOkStr = 'TAuthenticated ok';
   AuthFailedStr  = 'FAuthentication failed.';
   
-procedure TCommonMsgServer.DoHandshake(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.DoHandshake(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 var
     S: RawByteString;
     AuthOk: Boolean;
 begin
   //extract client data from incoming string
   //find the appropriate client rec in FClientList
-  SetString(S, Buf, BufSize);
+  SetString(S, PAnsiChar(Buf), BufSize);
   try
     Client.SerializeFrom(S);
         
@@ -778,7 +785,7 @@ begin
     InternalSend(Client, Length(AuthFailedStr), 1, AuthFailedStr);
 end;
 
-procedure TCommonMsgServer.DoClientList(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.DoClientList(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 var i: Integer;
     CR: TClientRec;
     S: RawByteString;
@@ -818,7 +825,7 @@ begin
   FreeAndNil(SL);
 end;
 
-procedure TCommonMsgServer.DoHeartbeat(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.DoHeartbeat(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 begin
   InternalSend(Client, 0, 3, '');
 end;
@@ -865,7 +872,7 @@ begin
   end;
 end;
 
-procedure TCommonMsgServer.DoBufferSent(Client: TClientRec; Buf: PAnsiChar; BufSize: Cardinal);
+procedure TCommonMsgServer.DoBufferSent(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 var MS: TMemoryStream;
 begin
   if Assigned(FOnStreamSent) then
@@ -882,7 +889,7 @@ begin
 end;
 
 procedure TCommonMsgServer.TcpRequestorTcpWrite(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
 var TypeR: Cardinal;
 begin
   TypeR := Cardinal(Key);

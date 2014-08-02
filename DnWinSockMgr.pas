@@ -15,7 +15,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Winsock2,
+  WS2,
   DnRtl, DnConst;
 
 type
@@ -62,13 +62,13 @@ begin
   begin
     if not CheckRunningNT4 then
       raise EDnException.Create(ErrRequiresNT4, 0);
-    FNeedUnload := Winsock2.WSAStartup(MakeWord(2,2), FWSAData) = 0;
+    FNeedUnload := WS2.WSAStartup(MakeWord(2,2), FWSAData) = 0;
     FActive := True;
   end else
   if FActive and not Value then
   begin
     if FNeedUnload then
-      Winsock2.WSACleanup();
+      WS2.WSACleanup();
     FNeedUnload := False;
     FActive := False;
   end;
