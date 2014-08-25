@@ -30,8 +30,9 @@ const
   ErrCannotRemoveOpenedChannel =    14;
   ErrZeroTransferDetected =         15;
   ErrRequiresNT4 =                  16;
-  
-  ExceptionMessages: array [0..16] of string =
+  ErrSSL =                          17;
+
+  ExceptionMessages: array [0..17] of string =
   (
   'Win32 system error.',
   'Invalid parameter passed to function.',
@@ -49,14 +50,15 @@ const
   'Channel is closing. No operations permitted.',
   'Cannot remove from reactor opened channel.',
   'Internal error. Zero transfer was detected.',
-  'This module requires at least NT4 system with SP6.'
+  'This module requires at least NT4 system with SP6.',
+  'OpenSSL error'
   );
 
   SCannotAccept = 'Cannot accept incoming connection on port %d for socket %d. Error code is %d';
   SCannotRemoveThread = 'Cannot remove thread.';
   SCannotCreateThread = 'Cannot create thread.';
-  
-  
+
+
 implementation
 
 end.

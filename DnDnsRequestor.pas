@@ -45,7 +45,7 @@ type
     destructor  Destroy; override;
 
     procedure   Stop;
-    procedure   StartResolve(const HostName: AnsiString; UserData: Pointer; CompleteHandler: TDnDnsResolveEvent);
+    procedure   StartResolve(const HostName: String; UserData: Pointer; CompleteHandler: TDnDnsResolveEvent);
   end;
 
   TDnDnsRequestor = class(TDnTcpAbstractRequestor)
@@ -57,10 +57,10 @@ type
     function TurnOff: Boolean; override;
 
   public
-    constructor Create{$IFDEF ROOT_IS_COMPONENT}(AOwner: TComponent); override {$ENDIF};
+    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override {$ENDIF};
     destructor  Destroy; override;
 
-    //This method STARTS the resolving of host name
+    // This method STARTS the resolving of host name
     procedure   Resolve(const HostName: String; UserData: Pointer; Handler: TDnDNSResolveEvent = Nil);
 
     class function
@@ -210,9 +210,9 @@ begin
 end;
 
 //--------------------- TDnDnsRequestor -----------------------
-constructor TDnDnsRequestor.Create{$IFDEF ROOT_IS_COMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnDnsRequestor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
 begin
-  inherited Create{$IFDEF ROOT_IS_COMPONENT}(AOwner){$ENDIF};
+  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
 end;
 
 destructor TDnDnsRequestor.Destroy;
@@ -252,7 +252,7 @@ end;
 class function TDnDnsRequestor.IsIPAddress(const S: AnsiString): Boolean;
 var Addr: WS2.TInAddr;
 begin
-  Addr.S_addr := WS2.inet_addr(PChar(S));
+  Addr.S_addr := WS2.inet_addr(PAnsiChar(S));
   Result :=  Addr.S_addr <> WS2.INADDR_NONE;
 end;
 

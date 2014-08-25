@@ -1,12 +1,13 @@
 {$I DnConfig.inc}
+{$ifdef USE_3RD_PARTY_LOGGING}
 unit DnLogger;
 
 interface
 
 uses
-  Classes, SysUtils, DnAbstractLogger,
-  Logging, LogSupport;
-
+  Classes, SysUtils, DnAbstractLogger
+  ,Logging, LogSupport
+  ;
 
 type
 
@@ -18,11 +19,12 @@ type
     function  TurnOff: Boolean; override;
 
   public
-    {$IFDEF ROOTISCOMPONENT}
+    {$ifdef ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent; aLog : TabsLog); virtual; reintroduce;
-    {$ELSE}
+    {$else}
     constructor Create(aLog : TabsLog);
-   {$ENDIF}
+    {$endif}
+
     destructor Destroy; override;
     procedure     LogMsg(Level: TDnLogLevel; const Msg: String); override;
   end;
@@ -102,9 +104,10 @@ begin
   end;
 
 end;
-
-
-
-
 end.
-
+{$else}
+unit DnLogger;
+interface
+implementation
+end.
+{$endif}

@@ -14,10 +14,10 @@ uses
   Classes,
   SysUtils,
   DnRtl,
-  DnAbstractTimer,
   DnTimerEngine,
   DnAbstractLogger,
   DnAbstractExecutor,
+  DnTcpChannel,
   DnSimpleExecutor,
   DnCallbackLogger;
 
@@ -37,8 +37,8 @@ type
     ['{F7502C4B-1ECA-437a-B50E-2B0DE1C8F27C}']
     procedure ItemExpired(Obj: IDnCachedObject);
   end;
-  
-  TDnCacheStrHash = class (TDnObject, IDnTimerHandler)
+
+  TDnCacheStrHash = class (TDnObject)
   protected
     FTimer:     TDnTimerEngine;
     FList:      TStringList;
@@ -46,8 +46,8 @@ type
     FExecutor:  TDnSimpleExecutor;
     FLogger:    TDnAbstractLogger;
     FHandler:   IDnCacheTimeOutHandler;
-    
-    procedure TimerExpired(Context: TDnThreadContext; Channel: IDnChannel;
+
+    procedure TimerExpired(Context: TDnThreadContext; Channel: TDnTcpChannel;
                             ExpiredTacts: Cardinal; Key: Pointer);
     procedure Lock;
     procedure Unlock;
@@ -80,7 +80,7 @@ begin
   FGuard := TDnMutex.Create;
   FLogger := Logger;
   FExecutor.Active := True;
-  FTimer.Executor := FExecutor;
+
   FTimer.Active := True;
   FHandler := Handler;
 end;
@@ -94,9 +94,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TDnCacheStrHash.TimerExpired(Context: TDnThreadContext; Channel: IDnChannel;
+procedure TDnCacheStrHash.TimerExpired(Context: TDnThreadContext; Channel: TDnTcpChannel;
                             ExpiredTacts: Cardinal; Key: Pointer);
-var 
+var
     Obj: IDnCachedObjectStrHash;
 begin
   Obj := IDnCachedObjectStrHash(Key);
@@ -128,7 +128,7 @@ begin
     begin //request timer event
       Obj._AddRef;
       FList.AddObject(Obj.GetStrHash(), Pointer(Obj));
-      FTimer.RequestTimerNotify(Nil, Trunc(Remaining * 86400 + 0.5), Pointer(Obj), Self);
+      FTimer.RequestTimerNotify(Nil, Trunc(Remaining * 86400 + 0.5), Pointer(Obj));
     end else
     begin
       if Obj.ExpireDate = 0 then

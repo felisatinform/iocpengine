@@ -189,10 +189,10 @@ end;
 
 function    TDnBase64Encoder.Encode(var Dest; Size: Integer): Integer;
 var Filled, i: Integer;
-    outByte, inByte: PChar;
+    outByte, inByte: PAnsiChar;
     a1, a2, a3, b1, b2, b3, b4: Byte;
 begin
-  outByte := PChar(Dest); inByte := PChar(FSource);
+  outByte := PAnsiChar(Dest); inByte := PAnsiChar(FSource);
   FNeededInput := False; FNeededOutput := False;
   FProcessed := 0;
   Filled := 0;

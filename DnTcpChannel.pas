@@ -10,7 +10,7 @@ type
   //TDnRefType = (rtClientList, rtChannelList, rtReadIO, rtWriteIO, rtCloseIO, rtTimerEngine);
   TDnTcpChannel = class (TDnObject)
   protected
-    //easy-to-read remote peer address
+    // Easy-to-read remote peer address
     FRemoteIP:            AnsiString;
     FRemotePort:          Word;
     
@@ -49,10 +49,11 @@ type
 
     procedure   SetTimeOut(Value: Cardinal);
     procedure   IssueTimeOutRequest(TimeOut: Cardinal; Request: TDnTcpRequest);
-    procedure   InitChannel;
+    procedure   InitChannel; virtual;
     function    GetRemoteAddrPtr: Pointer;
     procedure   IncrementIOCounter;
     function    GetIsFinished: Boolean;
+
   public
     constructor Create(Reactor: TObject; Sock: TSocket; RemoteAddr: TSockAddrIn);
     constructor CreateEmpty(Reactor: TObject; const RemoteIP: AnsiString; Port: Word); overload;
@@ -78,7 +79,7 @@ type
 
     class function    MatchingRequest(Context: Pointer): TDnTcpRequest;
 
-    //IDnChannel
+    // IDnChannel interface implementation
     function  RemotePort: Word;
     function  RemoteAddr: AnsiString;
     function  RemoteHost: String;
@@ -89,7 +90,8 @@ type
     function  IsClosing: Boolean;
 
     procedure InitClient(const RemoteIP: AnsiString; RemotePort: Word);
-    //IDnIOTrackerHolder
+
+    // IDnIOTrackerHolder implementation
     function  IsBound: Boolean;
     procedure Bind(Tracker: Pointer);
     procedure Unbind(Tracker: Pointer);
@@ -211,7 +213,6 @@ begin
 
   if GChannelList.Count = 0 then
     AddChannel(Self);
-
 end;
 
 constructor TDnTcpChannel.Create(Reactor: TObject; Sock: TSocket; RemoteAddr: TSockAddrIn);
@@ -269,6 +270,7 @@ begin
   FRemoteAddr.sin_family := AF_INET;
   FClient := True;
   FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
+
   InitChannel;
 end;
 

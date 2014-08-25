@@ -139,9 +139,10 @@ function TDnTcpConnectWatcher.TurnOn: Boolean;
 begin
   if (FReactor = Nil) or (FLogger = Nil) or (FExecutor = Nil) then
     raise EDnException.Create(ErrInvalidConfig, 0, 'TDnTcpConnectWatcher');
+
   FConnects := TObjectList.Create(False);
   FNewConnects := TObjectList.Create(False);
-  //FGuard := TDnMutex.Create;
+
   FThread := TDnTcpConnectWatcherThread.Create(Self);
   FThread.Resume;
   Result := True;

@@ -474,10 +474,8 @@ begin
   FGuard.Acquire;
   try
     // check at first if such channel exists already
-    if CreateIOCompletionPort(Channel.SocketHandle, FPort,
-      Cardinal(Pointer(Channel)), 1) = 0 then
-      raise EDnException.Create(ErrWin32Error, GetLastError(),
-        'CreateIOCompletionPort');
+    if CreateIOCompletionPort(Channel.SocketHandle, FPort, Cardinal(Pointer(Channel)), 1) = 0 then
+      raise EDnException.Create(ErrWin32Error, GetLastError(), 'CreateIOCompletionPort');
 
     // check at first if such channel object is already in
     ChannelIndex := FChannelList.IndexOf(Channel);

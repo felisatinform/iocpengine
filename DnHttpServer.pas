@@ -41,7 +41,7 @@ type
     FFormData: TDnFormDataParser;
 
     FCloseAfterSend:  Boolean;
-    function GetTempBufferPtr: PAnsiChar;
+    function GetTempBufferPtr: PByte;
     function GetTempBufferSize: Integer;
 
     function GetBufferPtr: PAnsiChar;
@@ -65,8 +65,8 @@ type
     property SentBytes:       Int64             read FSentBytes write FSentBytes;
     property CloseAfterSend:  Boolean           read FCloseAfterSend write FCloseAfterSend;
 
-    property TempBufferPtr:   PAnsiChar         read GetTempBufferPtr;
-    property TempBufferSize: Integer          read GetTempBufferSize;
+    property TempBufferPtr:   PByte             read GetTempBufferPtr;
+    property TempBufferSize:  Integer           read GetTempBufferSize;
   end;
 
 type
@@ -117,9 +117,9 @@ type
     procedure     ChannelCreate(Context: TDnThreadContext; Socket: TSocket; Addr: TSockAddrIn;
                     Reactor: TDnTcpReactor; var ChannelImpl: TDnTcpChannel);
     procedure     TcpRead(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
     procedure     TcpWrite(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                           Buf: PAnsiChar; BufSize: Cardinal);
+                           Buf: PByte; BufSize: Cardinal);
     procedure     TcpWriteStream (Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
                            Stream: TStream);
     procedure     TcpError(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
@@ -188,7 +188,7 @@ begin
   inherited Destroy;
 end;
 
-function TDnHttpChannel.GetTempBufferPtr: PAnsiChar;
+function TDnHttpChannel.GetTempBufferPtr: PByte;
 begin
   Result := @FTempBuffer;
 end;
@@ -454,7 +454,7 @@ begin
 end;
 
 procedure TDnHttpServer.TcpRead(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
 var HttpChannel: TDnHttpChannel;
     Processed: Integer;
 begin
@@ -482,7 +482,7 @@ begin
 end;
 
 procedure TDnHttpServer.TcpWrite(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
-                          Buf: PAnsiChar; BufSize: Cardinal);
+                          Buf: PByte; BufSize: Cardinal);
 var HttpChannel: TDnHttpChannel;
 begin
   HttpChannel := TDnHttpChannel(Channel);
@@ -588,7 +588,7 @@ end;
 
 procedure  TDnHttpServer.SendData(Channel: TDnHttpChannel; Buf: Pointer; BufSize: Integer);
 begin
-  FRequestor.Write(Channel, Nil, PAnsiChar(Buf), BufSize);
+  FRequestor.Write(Channel, Nil, PByte(Buf), BufSize);
 end;
 
 procedure  TDnHttpServer.SendResponse(Channel: TDnHttpChannel);

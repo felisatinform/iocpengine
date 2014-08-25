@@ -280,11 +280,11 @@ type
     FHTTPContentLength: Integer;
     FHTTPKeepAlive: Boolean;
 
-    procedure QueueBuffer(const Buffer: PAnsiChar; BufferSize: Integer);
+    procedure QueueBuffer(const Buffer: PByte; BufferSize: Integer);
       overload;
-    procedure QueueBuffer(const Buffer: PAnsiChar); overload;
+    procedure QueueBuffer(const Buffer: PByte); overload;
 
-    function GetContent: PAnsiChar;
+    function GetContent: PByte;
     function GetContentSize: Integer;
 
     function GetHeaderSize: Integer;
@@ -313,7 +313,7 @@ type
       FHTTPContentLength;
     property KeepAlive: Boolean read FHTTPKeepAlive write FHTTPKeepAlive;
 
-    property BufferPtr: PAnsiChar read GetContent;
+    property BufferPtr: PByte read GetContent;
     property BufferSize: Integer read GetContentSize;
 
     property HeaderSize: Integer read GetHeaderSize;
@@ -1504,11 +1504,11 @@ procedure TDnHttpWriter.AddVersion(Version: TDnHttpVersion);
 begin
   case Version of
     http09:
-      QueueBuffer('HTTP/0.9 ');
+      QueueBuffer(PByte(PAnsiChar('HTTP/0.9 ')));
     http10:
-      QueueBuffer('HTTP/1.0 ');
+      QueueBuffer(PByte(PAnsiChar('HTTP/1.0 ')));
     http11:
-      QueueBuffer('HTTP/1.1 ');
+      QueueBuffer(PByte(PAnsiChar('HTTP/1.1 ')));
   end;
 end;
 
@@ -1532,9 +1532,9 @@ procedure TDnHttpWriter.AddResponseMsg(Msg: PAnsiChar);
 var
   CRLF: PAnsiChar;
 begin
-  QueueBuffer(Msg);
+  QueueBuffer(PByte(Msg));
   CRLF := #13#10;
-  QueueBuffer(CRLF);
+  QueueBuffer(PByte(PAnsiChar(CRLF)));
 end;
 
 procedure TDnHttpWriter.AddHeader(const HeaderName: PAnsiChar;
@@ -1551,7 +1551,7 @@ begin
   HeaderText[AnsiFormatBuf(HeaderText, Sizeof(HeaderText), FormatText^,
     StrLen(FormatText), [HeaderName, HeaderValue])] := #0;
 {$IFEND}
-  QueueBuffer(HeaderText);
+  QueueBuffer(PByte(@HeaderText[0]));
 end;
 
 procedure TDnHttpWriter.AddHeader(const HeaderName: PAnsiChar;
@@ -1568,7 +1568,7 @@ begin
   HeaderText[AnsiFormatBuf(HeaderText, Sizeof(HeaderText), FormatText^,
     StrLen(FormatText), [HeaderName, HeaderValue])] := #0;
 {$IFEND}
-  QueueBuffer(HeaderText);
+  QueueBuffer(PByte(@HeaderText[0]));
 end;
 
 procedure TDnHttpWriter.FinishHeader;
@@ -1585,7 +1585,7 @@ begin
     AddHeader('Content-Length', FHTTPContentLength);
   end;
 
-  QueueBuffer(#13#10#0);
+  QueueBuffer(PByte(PAnsiChar(#13#10#0)));
 
   FHeaderSize := FContentSize;
 end;
@@ -1610,16 +1610,16 @@ begin
     ChunkLength[AnsiFormatBuf(ChunkLength[0], Sizeof(ChunkLength), FormatText^,
       StrLen(FormatText), [BufferSize])] := #0;
 {$IFEND}
-    QueueBuffer(ChunkLength, StrLen(PAnsiChar(@ChunkLength[0])));
+    QueueBuffer(PByte(@ChunkLength[0]), StrLen(PAnsiChar(@ChunkLength[0])));
   end;
 
   if BufferSize = 0 then
     FIsLastChunk := True
   else
-    QueueBuffer(Buffer, BufferSize);
+    QueueBuffer(PByte(PAnsiChar(Buffer)), BufferSize);
 
   if FHTTPChunkedEncoding then
-    QueueBuffer(#13#10);
+    QueueBuffer(PByte(PAnsiChar(#13#10)));
 end;
 
 procedure TDnHttpWriter.Build;
@@ -1627,7 +1627,7 @@ begin
   // No implementation here - currently all data are written ready-to-use
 end;
 
-procedure TDnHttpWriter.QueueBuffer(const Buffer: PAnsiChar;
+procedure TDnHttpWriter.QueueBuffer(const Buffer: PByte;
   BufferSize: Integer);
 begin
   if BufferSize = 0 then
@@ -1645,14 +1645,14 @@ begin
   Inc(FContentSize, BufferSize);
 end;
 
-procedure TDnHttpWriter.QueueBuffer(const Buffer: PAnsiChar);
+procedure TDnHttpWriter.QueueBuffer(const Buffer: PByte);
 begin
-  Self.QueueBuffer(Buffer, StrLen(Buffer));
+  Self.QueueBuffer(Buffer, StrLen(PAnsiChar(Buffer)));
 end;
 
-function TDnHttpWriter.GetContent: PAnsiChar;
+function TDnHttpWriter.GetContent: PByte;
 begin
-  Result := FContent;
+  Result := PByte(PAnsiChar(FContent));
 end;
 
 function TDnHttpWriter.GetContentSize: Integer;

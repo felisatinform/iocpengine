@@ -26,7 +26,7 @@ package DNet;
 {$OPTIMIZATION OFF}
 {$OVERFLOWCHECKS ON}
 {$RANGECHECKS ON}
-{$REFERENCEINFO ON}
+{$DEFINITIONINFO ON}
 {$SAFEDIVIDE OFF}
 {$STACKFRAMES ON}
 {$TYPEDADDRESS OFF}
@@ -45,8 +45,53 @@ requires
   vclx;
 
 contains
-  DnRegister in 'DnRegister.pas',
+  DnAbstractExecutor in 'DnAbstractExecutor.pas',
+  DnAbstractLogger in 'DnAbstractLogger.pas',
+  DnCallbackLogger in 'DnCallbackLogger.pas',
+  DnCGIParser in 'DnCGIParser.pas',
+  DnCoders in 'DnCoders.pas',
+  DnConst in 'DnConst.pas',
+  DnCookieParser in 'DnCookieParser.pas',
+  DnDataDecorator in 'DnDataDecorator.pas',
+  DnDataQueue in 'DnDataQueue.pas',
+  DnDnsRequestor in 'DnDnsRequestor.pas',
+  DnFileCachedLogger in 'DnFileCachedLogger.pas',
+  DnFileLogger in 'DnFileLogger.pas',
+  DnHttpParser in 'DnHttpParser.pas',
+  DnHttpRequest in 'DnHttpRequest.pas',
+  DnHttpRequestor in 'DnHttpRequestor.pas',
+  DnHttpServer in 'DnHttpServer.pas',
   DnInterfaces in 'DnInterfaces.pas',
-  DnHttpServer in 'DnHttpServer.pas';
+  DnLogger in 'DnLogger.pas',
+  DnMsgClient in 'DnMsgClient.pas',
+  DnMsgClientInfo in 'DnMsgClientInfo.pas',
+  DnMsgServer in 'DnMsgServer.pas',
+  DnRegister in 'DnRegister.pas',
+  DnRtl in 'DnRtl.pas',
+  DnSimpleExecutor in 'DnSimpleExecutor.pas',
+  DnStreamSec in 'DnStreamSec.pas',
+  DnStringList in 'DnStringList.pas',
+  DnTcpAbstractRequestor in 'DnTcpAbstractRequestor.pas',
+  DnTcpChannel in 'DnTcpChannel.pas',
+  DnTcpConnect in 'DnTcpConnect.pas',
+  DnTcpConnecter in 'DnTcpConnecter.pas',
+  DnTcpFileWriter in 'DnTcpFileWriter.pas',
+  DnTcpListener in 'DnTcpListener.pas',
+  DnTcpReactor in 'DnTcpReactor.pas',
+  DnTcpRequest in 'DnTcpRequest.pas',
+  DnTcpRequestor in 'DnTcpRequestor.pas',
+  DnTcpRequests in 'DnTcpRequests.pas',
+  DnTcpWriteFile in 'DnTcpWriteFile.pas',
+  DnTimedCache in 'DnTimedCache.pas',
+  DnTimerEngine in 'DnTimerEngine.pas',
+  DnUtils in 'DnUtils.pas',
+  DnWinSockMgr in 'DnWinSockMgr.pas',
+  OpenSSLImport in 'OpenSSLImport.pas',
+  OpenSSLUtils in 'OpenSSLUtils.pas',
+  svcguid in 'svcguid.pas',
+  WS2 in 'WS2.pas',
+  DnTlsRequests_OpenSSL in 'DnTlsRequests_OpenSSL.pas',
+  DnTlsRequestor_OpenSSL in 'DnTlsRequestor_OpenSSL.pas',
+  DnTlsChannel in 'DnTlsChannel.pas';
 
 end.
