@@ -9,10 +9,11 @@ type
     FSize,
     FCapacity,
     FIncrement:   Integer;
-    FData:        Pointer;
+    FData:        PByte;
     FGuard:       TCriticalSection;
 
-    procedure   EnsureCapacity(NewSize: Integer);
+    procedure SetSize(NewSize: Integer);
+    
   public
     constructor Create(InitialCapacity: Integer = 8192; Increment: Integer = 8192);
     destructor  Destroy; override;
@@ -25,7 +26,7 @@ type
     function    Extract(Buf: Pointer; Size: Integer): Integer;
     function    Delete(Size: Integer): Integer;
     procedure   Clear;
-    
+
     function    IsInteger: Boolean;
     function    IsInt64: Boolean;
     function    IsByte: Boolean;
@@ -38,9 +39,12 @@ type
     function    ReadWord: Word;
     function    ReadAnsiChar: AnsiChar;
     function    ReadBlock(BlockSize: Integer): AnsiString;
-    
-    property    Size:  Integer read FSize;
-    property    Memory: Pointer read FData;
+
+    procedure   EnsureCapacity(NewSize: Integer);
+
+    property    Size:  Integer read FSize write SetSize;
+    property    Capacity: Integer read FCapacity write FCapacity;
+    property    Memory: PByte read FData;
   end;
 
 implementation
@@ -66,6 +70,11 @@ begin
   inherited Destroy;
 end;
 
+procedure TDnDataQueue.SetSize(NewSize: Integer);
+begin
+  Assert(NewSize <= FCapacity);
+  FSize := NewSize;
+end;
 
 procedure TDnDataQueue.EnsureCapacity(NewSize: Integer);
 var NewCapacity: Integer;

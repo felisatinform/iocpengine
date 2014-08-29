@@ -8,15 +8,21 @@
 // All Rights Reserved.
 //
 // The original file is: Winsock2.h from CBuilder5 distribution.
-// The original Pascal code is: winsock2.pas, released 03 Mar 2001.
+// The original Pascal code is: winsock2.pas, released 04 Mar 2000.
 // The initial developer of the Pascal code is Alex Konshin
 // (alexk@mtgroup.ru).
 //
 // Portions created by Alex Konshin are
-// Copyright (C) 1998-2001 Alex Konshin
+// Copyright (C) 1998-2000 Alex Konshin
 //
-// You may retrieve the latest version of this file 
-// at author home page http://www.mtgroup.ru/~alexk/
+// Contributor(s): Alex Konshin
+//
+//       Obtained through:
+//
+//       Joint Endeavour of Delphi Innovators (Project JEDI)
+//
+// You may retrieve the latest version of this file at the Project
+// JEDI home page, located at http://delphi-jedi.org
 //
 // The contents of this file are used with permission, subject to
 // the Mozilla Public License Version 1.1 (the "License"); you may
@@ -40,58 +46,23 @@
   conditions for redistribution. }
 
 // converted by Alex Konshin, mailto:alexk@mtgroup.ru
-// revision 3, March,1 2001
-
+// modified March,4 2000
 
 unit WS2;
 
 interface
 
+uses SysUtils, Windows;
+
 {$ALIGN OFF}
 {$RANGECHECKS OFF}
 {$WRITEABLECONST OFF}
-
-uses SysUtils, Windows;
-
-{$DEFINE INCL_WINSOCK_API_PROTOTYPES}
-
-{$IFDEF WS2_DLL_DYNAMIC_LOAD}	
-
-type
-	EWS2StubError = class(Exception)
-	protected		
-		FWin32Error : DWORD;
-		FWin32ErrorMessage : String;
-		FTitle : String;
-	public
-		constructor	Build( const ATitle : String; AWin32Error : DWORD );
-		property Win32Error : DWORD read FWin32Error;
-		property Win32ErrorMessage : String read FWin32ErrorMessage;
-		property Title : String read FTitle;
-	end;
-
-{$DEFINE INCL_WINSOCK_API_TYPEDEFS}
-	
-{$IFDEF WS2_DLL_TRACE}
-{$UNDEF WS2_DLL_FUNC_VARS}
-{$DEFINE INCL_WINSOCK_API_PROTOTYPES}
-{$ELSE}	
-{$DEFINE WS2_DLL_FUNC_VARS}
-{$UNDEF INCL_WINSOCK_API_PROTOTYPES}
-{$ENDIF}	
-	
-{$ELSE}	
-
-{$DEFINE INCL_WINSOCK_API_PROTOTYPES}
-{$UNDEF WS2_DLL_FUNC_VARS}
-
-{$ENDIF}	
 
 //  Define the current Winsock version. To build an earlier Winsock version
 //  application redefine this value prior to including Winsock2.h
 const
   WINSOCK_VERSION = $0202;
-  WINSOCK2_DLL = 'WS2_32.DLL';
+  WINSOCK2_DLL = 'ws2_32.dll';
 
 type
   u_char  = Byte;
@@ -161,20 +132,20 @@ const
 type
   PHostEnt = ^THostEnt;
   THostEnt = packed record
-    h_name: PChar;                 // official name of host
-    h_aliases: ^PChar;             // alias list
+    h_name: PAnsiChar;                 // official name of host
+    h_aliases: ^PAnsiChar;             // alias list
     h_addrtype: Smallint;          // host address type
     h_length: Smallint;            // length of address
     case Byte of
-      0: (h_addr_list: ^PChar);    // list of addresses
-      1: (h_addr: ^PChar);         // address, for backward compat
+      0: (h_addr_list: ^PAnsiChar);    // list of addresses
+      1: (h_addr: ^PAnsiChar);         // address, for backward compat
   end;
 
 //  It is assumed here that a network number
 //  fits in 32 bits.
   PNetEnt = ^TNetEnt;
   TNetEnt = packed record
-    n_name: PChar;                 // official name of net
+    n_name: PAnsiChar;                 // official name of net
     n_aliases: ^PChar;             // alias list
     n_addrtype: Smallint;          // net address type
     n_net: u_long;                 // network #
@@ -208,9 +179,7 @@ const
   IPPROTO_PUP    =  12;             // pup
   IPPROTO_UDP    =  17;             // UDP - user datagram protocol
   IPPROTO_IDP    =  22;             // xns idp
-  IPPROTO_IPV6   =  41;             // IPv6
   IPPROTO_ND     =  77;             // UNOFFICIAL net disk proto
-  IPPROTO_ICLFXBM = 78;
 
   IPPROTO_RAW    = 255;             // raw IP packet
   IPPROTO_MAX    = 256;
@@ -376,11 +345,8 @@ const
   AF_12844        = 25;              // IEEE 1284.4 WG AF
   AF_IRDA         = 26;              // IrDA
   AF_NETDES       = 28;              // Network Designers OSI & gateway enabled protocols
-  AF_TCNPROCESS   = 29;
-  AF_TCNMESSAGE   = 30;
-  AF_ICLFXBM      = 31;
 
-  AF_MAX          = 32;
+  AF_MAX          = 29;
 
 
 // Protocol families, same as address families for now.
@@ -491,18 +457,16 @@ const
   SOMAXCONN        = $7fffffff;
 
 // WinSock 2 extension -- bit values and indices for FD_XXX network events
-  FD_READ_BIT                     = 0;
-  FD_WRITE_BIT                    = 1;
-  FD_OOB_BIT                      = 2;
-  FD_ACCEPT_BIT                   = 3;
-  FD_CONNECT_BIT                  = 4;
-  FD_CLOSE_BIT                    = 5;
-  FD_QOS_BIT                      = 6;
-  FD_GROUP_QOS_BIT                = 7;
-  FD_ROUTING_INTERFACE_CHANGE_BIT = 8;
-  FD_ADDRESS_LIST_CHANGE_BIT      = 9;
+  FD_READ_BIT      = 0;
+  FD_WRITE_BIT     = 1;
+  FD_OOB_BIT       = 2;
+  FD_ACCEPT_BIT    = 3;
+  FD_CONNECT_BIT   = 4;
+  FD_CLOSE_BIT     = 5;
+  FD_QOS_BIT       = 6;
+  FD_GROUP_QOS_BIT = 7;
 
-  FD_MAX_EVENTS    = 10;
+  FD_MAX_EVENTS    = 8;
 
   FD_READ       = (1 shl FD_READ_BIT);
   FD_WRITE      = (1 shl FD_WRITE_BIT);
@@ -512,8 +476,6 @@ const
   FD_CLOSE      = (1 shl FD_CLOSE_BIT);
   FD_QOS        = (1 shl FD_QOS_BIT);
   FD_GROUP_QOS  = (1 shl FD_GROUP_QOS_BIT);
-  FD_ROUTING_INTERFACE_CHANGE = (1 shl FD_ROUTING_INTERFACE_CHANGE_BIT);
-  FD_ADDRESS_LIST_CHANGE      = (1 shl FD_ADDRESS_LIST_CHANGE_BIT);
 
   FD_ALL_EVENTS = (1 shl FD_MAX_EVENTS) - 1;
 
@@ -947,9 +909,9 @@ const
   IOC_VENDOR    = $18000000;
 
   SIO_ASSOCIATE_HANDLE                =  1 or IOC_WS2 or IOC_IN;
-  SIO_ENABLE_CIRCULAR_QUEUEING        =  2 or IOC_WS2 or IOC_VOID;
+  SIO_ENABLE_CIRCULAR_QUEUEING        =  2 or IOC_WS2;
   SIO_FIND_ROUTE                      =  3 or IOC_WS2 or IOC_OUT;
-  SIO_FLUSH                           =  4 or IOC_WS2 or IOC_VOID;
+  SIO_FLUSH                           =  4 or IOC_WS2;
   SIO_GET_BROADCAST_ADDRESS           =  5 or IOC_WS2 or IOC_OUT;
   SIO_GET_EXTENSION_FUNCTION_POINTER  =  6 or IOC_WS2 or IOC_INOUT;
   SIO_GET_QOS                         =  7 or IOC_WS2 or IOC_INOUT;
@@ -962,9 +924,8 @@ const
   SIO_ROUTING_INTERFACE_QUERY         = 20 or IOC_WS2 or IOC_INOUT;
   SIO_ROUTING_INTERFACE_CHANGE        = 21 or IOC_WS2 or IOC_IN;
   SIO_ADDRESS_LIST_QUERY              = 22 or IOC_WS2 or IOC_OUT; // see below SOCKET_ADDRESS_LIST
-  SIO_ADDRESS_LIST_CHANGE             = 23 or IOC_WS2 or IOC_VOID;
+  SIO_ADDRESS_LIST_CHANGE             = 23 or IOC_WS2;
   SIO_QUERY_TARGET_PNP_HANDLE         = 24 or IOC_WS2 or IOC_OUT;
-  SIO_ADDRESS_LIST_SORT               = 25 or IOC_WS2 or IOC_INOUT;
 
 //  WinSock 2 extension -- manifest constants for SIO_TRANSLATE_HANDLE ioctl
   TH_NETDEV = $00000001;
@@ -1035,8 +996,8 @@ const
   SERVICE_TYPE_VALUE_OBJECTIDW : PWideChar = 'ObjectId';
 
 {$IFDEF UNICODE}
-  SERVICE_TYPE_VALUE_SAPID : PWideChar   = 'SapId';
-  SERVICE_TYPE_VALUE_TCPPORT : PWideChar = 'TcpPort';
+  SERVICE_TYPE_VALUE_SAPID : PWideChar = 'SapId';
+  SERVICE_TYPE_VALUE_TCPPORT : PWideChar  = 'TcpPort';
   SERVICE_TYPE_VALUE_UDPPORT : PWideChar = 'UdpPort';
   SERVICE_TYPE_VALUE_OBJECTID : PWideChar = 'ObjectId';
 {$ELSE}
@@ -1265,7 +1226,167 @@ type
     g : GROUP; dwCallbackData : DWORD ) : Integer; stdcall;
   LPWSAOVERLAPPED_COMPLETION_ROUTINE = procedure ( const dwError, cbTransferred : DWORD; const lpOverlapped : LPWSAOVERLAPPED; const dwFlags : DWORD ); stdcall;
 
-{$include ws2prototypes.inc}
+function accept( const s: TSocket; var addr: TSockAddr; var addrlen: Integer ): TSocket; stdcall;
+function bind( const s: TSocket; const addr: PSockAddr; const namelen: Integer ): Integer; stdcall;
+function closesocket( const s: TSocket ): Integer; stdcall;
+function connect( const s: TSocket; const name: PSockAddr; namelen: Integer): Integer; stdcall;
+function ioctlsocket( const s: TSocket; const cmd: DWORD; var arg: u_long ): Integer; stdcall;
+function getpeername( const s: TSocket; var name: TSockAddr; var namelen: Integer ): Integer; stdcall;
+function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Integer ): Integer; stdcall;
+function getsockopt( const s: TSocket; const level, optname: Integer; optval: PChar; var optlen: Integer ): Integer; stdcall;
+function htonl(hostlong: u_long): u_long; stdcall;
+function htons(hostshort: u_short): u_short; stdcall;
+function inet_addr(cp: PAnsiChar): u_long; stdcall;
+function inet_ntoa(inaddr: TInAddr): PAnsiChar; stdcall;
+function listen(s: TSocket; backlog: Integer): Integer; stdcall;
+function ntohl(netlong: u_long): u_long; stdcall;
+function ntohs(netshort: u_short): u_short; stdcall;
+function recv(s: TSocket; var Buf; len, flags: Integer): Integer; stdcall;
+function recvfrom(s: TSocket; var Buf; len, flags: Integer; var from: TSockAddr; var fromlen: Integer): Integer; stdcall;
+function select(nfds: Integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Integer; stdcall;
+function send(s: TSocket; var Buf; len, flags: Integer): Integer; stdcall;
+function sendto(s: TSocket; var Buf; len, flags: Integer; var addrto: TSockAddr; tolen: Integer): Integer; stdcall;
+function setsockopt(s: TSocket; level, optname: Integer; optval: PAnsiChar; optlen: Integer): Integer; stdcall;
+function shutdown(s: TSocket; how: Integer): Integer; stdcall;
+function socket( const af, struct, protocol: Integer ): TSocket; stdcall;
+function gethostbyaddr(addr: Pointer; len, struct: Integer): PHostEnt; stdcall;
+function gethostbyname(name: PAnsiChar): PHostEnt; stdcall;
+function gethostname(name: PChar; len: Integer): Integer; stdcall;
+function getservbyport(port: Integer; proto: PChar): PServEnt; stdcall;
+function getservbyname(const name, proto: PChar): PServEnt; stdcall;
+function getprotobynumber(const proto: Integer): PProtoEnt; stdcall;
+function getprotobyname(const name: PChar): PProtoEnt; stdcall;
+function WSAStartup(wVersionRequired: word; var WSData: TWSAData): Integer; stdcall;
+function WSACleanup: Integer; stdcall;
+procedure WSASetLastError(iError: Integer); stdcall;
+function WSAGetLastError: Integer; stdcall;
+function WSAIsBlocking: BOOL; stdcall;
+function WSAUnhookBlockingHook: Integer; stdcall;
+function WSASetBlockingHook(lpBlockFunc: TFarProc): TFarProc; stdcall;
+function WSACancelBlockingCall: Integer; stdcall;
+function WSAAsyncGetServByName(HWindow: HWND; wMsg: u_int; name, proto, buf: PChar; buflen: Integer): THandle; stdcall;
+function WSAAsyncGetServByPort( HWindow: HWND; wMsg, port: u_int; proto, buf: PChar; buflen: Integer): THandle; stdcall;
+function WSAAsyncGetProtoByName(HWindow: HWND; wMsg: u_int; name, buf: PChar; buflen: Integer): THandle; stdcall;
+function WSAAsyncGetProtoByNumber(HWindow: HWND; wMsg: u_int; number: Integer; buf: PChar; buflen: Integer): THandle; stdcall;
+function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; name, buf: PChar; buflen: Integer): THandle; stdcall;
+function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; addr: PChar; len, struct: Integer; buf: PChar; buflen: Integer): THandle; stdcall;
+function WSACancelAsyncRequest(hAsyncTaskHandle: THandle): Integer; stdcall;
+function WSAAsyncSelect(s: TSocket; HWindow: HWND; wMsg: u_int; lEvent: Longint): Integer; stdcall;
+function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): Bool; stdcall;
+
+{ WinSock 2 API new function prototypes }
+function WSAAccept( s : TSocket; addr : TSockAddr; addrlen : PInteger; lpfnCondition : LPCONDITIONPROC; dwCallbackData : DWORD ): TSocket; stdcall;
+function WSACloseEvent( hEvent : WSAEVENT) : WordBool; stdcall;
+function WSAConnect( s : TSocket; const name : PSockAddr; namelen : Integer; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS ) : Integer; stdcall;
+function WSACreateEvent : WSAEVENT; stdcall;
+
+function WSADuplicateSocketA( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoA ) : Integer; stdcall;
+function WSADuplicateSocketW( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoW ) : Integer; stdcall;
+function WSADuplicateSocket( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_Info ) : Integer; stdcall;
+
+function WSAEnumNetworkEvents( const s : TSocket; const hEventObject : WSAEVENT; lpNetworkEvents : LPWSANETWORKEVENTS ) :Integer; stdcall;
+function WSAEnumProtocolsA( lpiProtocols : PInteger; lpProtocolBuffer : LPWSAProtocol_InfoA; var lpdwBufferLength : DWORD ) : Integer; stdcall;
+function WSAEnumProtocolsW( lpiProtocols : PInteger; lpProtocolBuffer : LPWSAProtocol_InfoW; var lpdwBufferLength : DWORD ) : Integer; stdcall;
+function WSAEnumProtocols( lpiProtocols : PInteger; lpProtocolBuffer : LPWSAProtocol_Info; var lpdwBufferLength : DWORD ) : Integer; stdcall;
+
+function WSAEventSelect( s : TSocket; hEventObject : WSAEVENT; lNetworkEvents : LongInt ): Integer; stdcall;
+
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : WordBool; stdcall;
+
+function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): WordBool; stdcall;
+
+function WSAhtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Integer; stdcall;
+function WSAhtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Integer; stdcall;
+
+function WSAIoctl( s : TSocket; dwIoControlCode : DWORD; lpvInBuffer : Pointer; cbInBuffer : DWORD; lpvOutBuffer : Pointer; cbOutBuffer : DWORD;
+  lpcbBytesReturned : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ) : Integer; stdcall;
+
+function WSAJoinLeaf( s : TSocket; name : PSockAddr; namelen : Integer; lpCallerData,lpCalleeData : LPWSABUF;
+  lpSQOS,lpGQOS : LPQOS; dwFlags : DWORD ) : TSocket; stdcall;
+
+function WSANtohl( s : TSocket; netlong : u_long; var lphostlong : DWORD ): Integer; stdcall;
+function WSANtohs( s : TSocket; netshort : u_short; var lphostshort : WORD ): Integer; stdcall;
+
+function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD;
+  lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Integer; stdcall;
+function WSARecvDisconnect( s : TSocket; lpInboundDisconnectData : LPWSABUF ): Integer; stdcall;
+function WSARecvFrom( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD;
+  lpFrom : PSockAddr; lpFromlen : PInteger; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Integer; stdcall;
+
+function WSAResetEvent( hEvent : WSAEVENT ): WordBool; stdcall;
+
+function WSASend( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD;
+  lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Integer; stdcall;
+function WSASendDisconnect( s : TSocket; lpOutboundDisconnectData : LPWSABUF ): Integer; stdcall;
+function WSASendTo( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD;
+  lpTo : PSockAddr; iTolen : Integer; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Integer; stdcall;
+
+function WSASetEvent( hEvent : WSAEVENT ): WordBool; stdcall;
+
+function WSASocketA( af, iType, protocol : Integer; lpProtocolInfo : LPWSAProtocol_InfoA; g : GROUP; dwFlags : DWORD ): TSocket; stdcall;
+function WSASocketW( af, iType, protocol : Integer; lpProtocolInfo : LPWSAProtocol_InfoW; g : GROUP; dwFlags : DWORD ): TSocket; stdcall;
+function WSASocket( af, iType, protocol : Integer; lpProtocolInfo : LPWSAProtocol_Info; g : GROUP; dwFlags : DWORD ): TSocket; stdcall;
+
+function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : LongBool;
+  dwTimeout : DWORD; fAlertable : LongBool ): DWORD; stdcall;
+
+function WSAAddressToStringA( lpsaAddress : PSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoA;
+  const lpszAddressString : PChar; var lpdwAddressStringLength : DWORD ): Integer; stdcall;
+function WSAAddressToStringW( lpsaAddress : PSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoW;
+  const lpszAddressString : PWideChar; var lpdwAddressStringLength : DWORD ): Integer; stdcall;
+function WSAAddressToString( lpsaAddress : PSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_Info;
+  const lpszAddressString : PMBChar; var lpdwAddressStringLength : DWORD ): Integer; stdcall;
+
+function WSAStringToAddressA( const AddressString : PChar; const AddressFamily: Integer; const lpProtocolInfo : LPWSAProtocol_InfoA;
+  var lpAddress : TSockAddr; var lpAddressLength : Integer ): Integer; stdcall;
+function WSAStringToAddressW( const AddressString : PWideChar; const AddressFamily: Integer; const lpProtocolInfo : LPWSAProtocol_InfoA;
+  var lpAddress : TSockAddr; var lpAddressLength : Integer ): Integer; stdcall;
+function WSAStringToAddress( const AddressString : PMBChar; const AddressFamily: Integer; const lpProtocolInfo : LPWSAProtocol_Info;
+  var lpAddress : TSockAddr; var lpAddressLength : Integer ): Integer; stdcall;
+
+{ Registration and Name Resolution API functions }
+function WSALookupServiceBeginA( var qsRestrictions : TWSAQuerySetA; const dwControlFlags : DWORD; var hLookup : THANDLE ): Integer; stdcall;
+function WSALookupServiceBeginW( var qsRestrictions : TWSAQuerySetW; const dwControlFlags : DWORD; var hLookup : THANDLE ): Integer; stdcall;
+function WSALookupServiceBegin( var qsRestrictions : TWSAQuerySet; const dwControlFlags : DWORD; var hLookup : THANDLE ): Integer; stdcall;
+
+function WSALookupServiceNextA( const hLookup : THandle; const dwControlFlags : DWORD; var dwBufferLength : DWORD; lpqsResults : PWSAQuerySetA ): Integer; stdcall;
+function WSALookupServiceNextW( const hLookup : THandle; const dwControlFlags : DWORD; var dwBufferLength : DWORD; lpqsResults : PWSAQuerySetW ): Integer; stdcall;
+function WSALookupServiceNext( const hLookup : THandle; const dwControlFlags : DWORD; var dwBufferLength : DWORD; lpqsResults : PWSAQuerySet ): Integer; stdcall;
+
+function WSALookupServiceEnd( const hLookup : THandle ): Integer; stdcall;
+
+function WSAInstallServiceClassA( const lpServiceClassInfo : LPWSAServiceClassInfoA ) : Integer; stdcall;
+function WSAInstallServiceClassW( const lpServiceClassInfo : LPWSAServiceClassInfoW ) : Integer; stdcall;
+function WSAInstallServiceClass( const lpServiceClassInfo : LPWSAServiceClassInfo ) : Integer; stdcall;
+
+function WSARemoveServiceClass( const lpServiceClassId : PGUID ) : Integer; stdcall;
+
+function WSAGetServiceClassInfoA( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD;
+  lpServiceClassInfo : LPWSAServiceClassInfoA ): Integer; stdcall;
+function WSAGetServiceClassInfoW( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD;
+  lpServiceClassInfo : LPWSAServiceClassInfoW ): Integer; stdcall;
+function WSAGetServiceClassInfo( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD;
+  lpServiceClassInfo : LPWSAServiceClassInfo ): Integer; stdcall;
+
+function WSAEnumNameSpaceProvidersA( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_InfoA ): Integer; stdcall;
+function WSAEnumNameSpaceProvidersW( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_InfoW ): Integer; stdcall;
+function WSAEnumNameSpaceProviders( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_Info ): Integer; stdcall;
+
+function WSAGetServiceClassNameByClassIdA( const lpServiceClassId: PGUID; lpszServiceClassName: PChar;
+  var lpdwBufferLength: DWORD ): Integer; stdcall;
+function WSAGetServiceClassNameByClassIdW( const lpServiceClassId: PGUID; lpszServiceClassName: PWideChar;
+  var lpdwBufferLength: DWORD ): Integer; stdcall;
+function WSAGetServiceClassNameByClassId( const lpServiceClassId: PGUID; lpszServiceClassName: PMBChar;
+  var lpdwBufferLength: DWORD ): Integer; stdcall;
+
+function WSASetServiceA( const lpqsRegInfo: LPWSAQuerySetA; const essoperation: TWSAeSetServiceOp;
+  const dwControlFlags: DWORD ): Integer; stdcall;
+function WSASetServiceW( const lpqsRegInfo: LPWSAQuerySetW; const essoperation: TWSAeSetServiceOp;
+  const dwControlFlags: DWORD ): Integer; stdcall;
+function WSASetService( const lpqsRegInfo: LPWSAQuerySet; const essoperation: TWSAeSetServiceOp;
+  const dwControlFlags: DWORD ): Integer; stdcall;
+
+function WSAProviderConfigChange( var lpNotificationHandle : THandle; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ) : Integer; stdcall;
 
 
 { Macros }
@@ -1285,14 +1406,141 @@ procedure FD_ZERO(var FDSet: TFDSet);
 {$include wsipx.inc}
 {$include wsnwlink.inc}
 {$include wsnetbs.inc}
-{$include ws2atm.inc}
-
 
 //=============================================================
 implementation
 //=============================================================
 
-{$include ws2impl.inc}
+function accept;  external WINSOCK2_DLL name 'accept';
+function bind;  external WINSOCK2_DLL name 'bind';
+function closesocket; external WINSOCK2_DLL name 'closesocket';
+function connect; external WINSOCK2_DLL name 'connect';
+function ioctlsocket; external WINSOCK2_DLL name 'ioctlsocket';
+function getpeername; external WINSOCK2_DLL name 'getpeername';
+function getsockname; external WINSOCK2_DLL name 'getsockname';
+function getsockopt;  external WINSOCK2_DLL name 'getsockopt';
+function htonl; external WINSOCK2_DLL name 'htonl';
+function htons; external WINSOCK2_DLL name 'htons';
+function inet_addr; external WINSOCK2_DLL name 'inet_addr';
+function inet_ntoa; external WINSOCK2_DLL name 'inet_ntoa';
+function listen;  external WINSOCK2_DLL name 'listen';
+function ntohl; external WINSOCK2_DLL name 'ntohl';
+function ntohs; external WINSOCK2_DLL name 'ntohs';
+function recv;  external WINSOCK2_DLL name 'recv';
+function recvfrom;  external WINSOCK2_DLL name 'recvfrom';
+function select;  external WINSOCK2_DLL name 'select';
+function send;  external WINSOCK2_DLL name 'send';
+function sendto;  external WINSOCK2_DLL name 'sendto';
+function setsockopt;  external WINSOCK2_DLL name 'setsockopt';
+function shutdown;  external WINSOCK2_DLL name 'shutdown';
+function socket;  external WINSOCK2_DLL name 'socket';
+function gethostbyaddr; external WINSOCK2_DLL name 'gethostbyaddr';
+function gethostbyname; external WINSOCK2_DLL name 'gethostbyname';
+function gethostname; external WINSOCK2_DLL name 'gethostname';
+function getservbyport; external WINSOCK2_DLL name 'getservbyport';
+function getservbyname; external WINSOCK2_DLL name 'getservbyname';
+function getprotobynumber;  external WINSOCK2_DLL name 'getprotobynumber';
+function getprotobyname;  external WINSOCK2_DLL name 'getprotobyname';
+function WSAStartup;  external WINSOCK2_DLL name 'WSAStartup';
+function WSACleanup;  external WINSOCK2_DLL name 'WSACleanup';
+procedure WSASetLastError;  external WINSOCK2_DLL name 'WSASetLastError';
+function WSAGetLastError; external WINSOCK2_DLL name 'WSAGetLastError';
+function WSAIsBlocking; external WINSOCK2_DLL name 'WSAIsBlocking';
+function WSAUnhookBlockingHook; external WINSOCK2_DLL name 'WSAUnhookBlockingHook';
+function WSASetBlockingHook;  external WINSOCK2_DLL name 'WSASetBlockingHook';
+function WSACancelBlockingCall; external WINSOCK2_DLL name 'WSACancelBlockingCall';
+function WSAAsyncGetServByName; external WINSOCK2_DLL name 'WSAAsyncGetServByName';
+function WSAAsyncGetServByPort; external WINSOCK2_DLL name 'WSAAsyncGetServByPort';
+function WSAAsyncGetProtoByName;  external WINSOCK2_DLL name 'WSAAsyncGetProtoByName';
+function WSAAsyncGetProtoByNumber;  external WINSOCK2_DLL name 'WSAAsyncGetProtoByNumber';
+function WSAAsyncGetHostByName; external WINSOCK2_DLL name 'WSAAsyncGetHostByName';
+function WSAAsyncGetHostByAddr; external WINSOCK2_DLL name 'WSAAsyncGetHostByAddr';
+function WSACancelAsyncRequest; external WINSOCK2_DLL name 'WSACancelAsyncRequest';
+function WSAAsyncSelect;  external WINSOCK2_DLL name 'WSAAsyncSelect';
+function __WSAFDIsSet;  external WINSOCK2_DLL name '__WSAFDIsSet';
+
+{ WinSock 2 API new function prototypes }
+function WSAAccept; external WINSOCK2_DLL name 'WSAAccept';
+function WSACloseEvent; external WINSOCK2_DLL name 'WSACloseEvent';
+function WSAConnect;  external WINSOCK2_DLL name 'WSAConnect';
+function WSACreateEvent;  external WINSOCK2_DLL name 'WSACreateEvent';
+function WSADuplicateSocketA; external WINSOCK2_DLL name 'WSADuplicateSocketA';
+function WSADuplicateSocketW; external WINSOCK2_DLL name 'WSADuplicateSocketW';
+function WSAEnumNetworkEvents;  external WINSOCK2_DLL name 'WSAEnumNetworkEvents';
+function WSAEnumProtocolsA; external WINSOCK2_DLL name 'WSAEnumProtocolsA';
+function WSAEnumProtocolsW; external WINSOCK2_DLL name 'WSAEnumProtocolsW';
+function WSAEventSelect;  external WINSOCK2_DLL name 'WSAEventSelect';
+function WSAGetOverlappedResult;  external WINSOCK2_DLL name 'WSAGetOverlappedResult';
+function WSAGetQosByName; external WINSOCK2_DLL name 'WSAGetQosByName';
+function WSAhtonl;  external WINSOCK2_DLL name 'WSAhtonl';
+function WSAhtons;  external WINSOCK2_DLL name 'WSAhtons';
+function WSAIoctl;  external WINSOCK2_DLL name 'WSAIoctl';
+function WSAJoinLeaf; external WINSOCK2_DLL name 'WSAJoinLeaf';
+function WSANtohl;  external WINSOCK2_DLL name 'WSANtohl';
+function WSANtohs;  external WINSOCK2_DLL name 'WSANtohs';
+function WSARecv; external WINSOCK2_DLL name 'WSARecv';
+function WSARecvDisconnect; external WINSOCK2_DLL name 'WSARecvDisconnect';
+function WSARecvFrom; external WINSOCK2_DLL name 'WSARecvFrom';
+function WSAResetEvent; external WINSOCK2_DLL name 'WSAResetEvent';
+function WSASend; external WINSOCK2_DLL name 'WSASend';
+function WSASendDisconnect; external WINSOCK2_DLL name 'WSASendDisconnect';
+function WSASendTo; external WINSOCK2_DLL name 'WSASendTo';
+function WSASetEvent; external WINSOCK2_DLL name 'WSASetEvent';
+function WSASocketA;  external WINSOCK2_DLL name 'WSASocketA';
+function WSASocketW;  external WINSOCK2_DLL name 'WSASocketW';
+function WSAWaitForMultipleEvents;  external WINSOCK2_DLL name 'WSAWaitForMultipleEvents';
+function WSAAddressToStringA; external WINSOCK2_DLL name 'WSAAddressToStringA';
+function WSAAddressToStringW; external WINSOCK2_DLL name 'WSAAddressToStringW';
+function WSAStringToAddressA; external WINSOCK2_DLL name 'WSAStringToAddressA';
+function WSAStringToAddressW; external WINSOCK2_DLL name 'WSAStringToAddressW';
+
+{ Registration and Name Resolution API functions }
+function WSALookupServiceBeginA;  external WINSOCK2_DLL name 'WSALookupServiceBeginA';
+function WSALookupServiceBeginW;  external WINSOCK2_DLL name 'WSALookupServiceBeginW';
+function WSALookupServiceNextA; external WINSOCK2_DLL name 'WSALookupServiceNextA';
+function WSALookupServiceNextW; external WINSOCK2_DLL name 'WSALookupServiceNextW';
+function WSALookupServiceEnd; external WINSOCK2_DLL name 'WSALookupServiceEnd';
+function WSAInstallServiceClassA; external WINSOCK2_DLL name 'WSAInstallServiceClassA';
+function WSAInstallServiceClassW; external WINSOCK2_DLL name 'WSAInstallServiceClassW';
+function WSARemoveServiceClass; external WINSOCK2_DLL name 'WSARemoveServiceClass';
+function WSAGetServiceClassInfoA; external WINSOCK2_DLL name 'WSAGetServiceClassInfoA';
+function WSAGetServiceClassInfoW; external WINSOCK2_DLL name 'WSAGetServiceClassInfoW';
+function WSAEnumNameSpaceProvidersA;  external WINSOCK2_DLL name 'WSAEnumNameSpaceProvidersA';
+function WSAEnumNameSpaceProvidersW;  external WINSOCK2_DLL name 'WSAEnumNameSpaceProvidersW';
+function WSAGetServiceClassNameByClassIdA;  external WINSOCK2_DLL name 'WSAGetServiceClassNameByClassIdA';
+function WSAGetServiceClassNameByClassIdW;  external WINSOCK2_DLL name 'WSAGetServiceClassNameByClassIdW';
+function WSASetServiceA;  external WINSOCK2_DLL name 'WSASetServiceA';
+function WSASetServiceW;  external WINSOCK2_DLL name 'WSASetServiceW';
+
+{$IFDEF UNICODE}
+function WSADuplicateSocket;  external WINSOCK2_DLL name 'WSADuplicateSocketW';
+function WSAEnumProtocols;  external WINSOCK2_DLL name 'WSAEnumProtocolsW';
+function WSASocket; external WINSOCK2_DLL name 'WSASocketW';
+function WSAAddressToString;  external WINSOCK2_DLL name 'WSAAddressToStringW';
+function WSAStringToAddress;  external WINSOCK2_DLL name 'WSAStringToAddressW';
+function WSALookupServiceBegin; external WINSOCK2_DLL name 'WSALookupServiceBeginW';
+function WSALookupServiceNext;  external WINSOCK2_DLL name 'WSALookupServiceNextW';
+function WSAInstallServiceClass;  external WINSOCK2_DLL name 'WSAInstallServiceClassW';
+function WSAGetServiceClassInfo;  external WINSOCK2_DLL name 'WSAGetServiceClassInfoW';
+function WSAEnumNameSpaceProviders; external WINSOCK2_DLL name 'WSAEnumNameSpaceProvidersW';
+function WSAGetServiceClassNameByClassId; external WINSOCK2_DLL name 'WSAGetServiceClassNameByClassIdW';
+function WSASetService; external WINSOCK2_DLL name 'WSASetServiceW';
+{$ELSE}
+function WSADuplicateSocket;  external WINSOCK2_DLL name 'WSADuplicateSocketA';
+function WSAEnumProtocols;  external WINSOCK2_DLL name 'WSAEnumProtocolsA';
+function WSASocket; external WINSOCK2_DLL name 'WSASocketA';
+function WSAAddressToString;  external WINSOCK2_DLL name 'WSAAddressToStringA';
+function WSAStringToAddress;  external WINSOCK2_DLL name 'WSAStringToAddressA';
+function WSALookupServiceBegin; external WINSOCK2_DLL name 'WSALookupServiceBeginA';
+function WSALookupServiceNext;  external WINSOCK2_DLL name 'WSALookupServiceNextA';
+function WSAInstallServiceClass;  external WINSOCK2_DLL name 'WSAInstallServiceClassA';
+function WSAGetServiceClassInfo;  external WINSOCK2_DLL name 'WSAGetServiceClassInfoA';
+function WSAEnumNameSpaceProviders; external WINSOCK2_DLL name 'WSAEnumNameSpaceProvidersA';
+function WSAGetServiceClassNameByClassId; external WINSOCK2_DLL name 'WSAGetServiceClassNameByClassIdA';
+function WSASetService; external WINSOCK2_DLL name 'WSASetServiceA';
+{$ENDIF}
+
+function WSAProviderConfigChange; external WINSOCK2_DLL name 'WSAProviderConfigChange';
 
 
 function WSAMakeSyncReply;
@@ -1365,7 +1613,7 @@ begin
 end;
 
 //  A macro convenient for setting up NETBIOS SOCKADDRs.
-procedure SET_NETBIOS_SOCKADDR( snb : PSockAddrNB; const SnbType : Word; const Name : PChar; const Port : Char );
+procedure SET_NETBIOS_SOCKADDR( snb : PSOCKADDR_NB; const SnbType : Word; const Name : PChar; const Port : Char );
 var len : Integer;
 begin
   if snb<>nil then with snb^ do
@@ -1377,16 +1625,10 @@ begin
     else
       begin
         if len>0 then System.Move(Name^,snb_name,len);
-        System.FillChar( (PChar(@snb_name)+len)^, NETBIOS_NAME_LENGTH-1-len, ' ' );
+        FillChar( (PChar(@snb_name)+len)^, NETBIOS_NAME_LENGTH-1-len, ' ' );
       end;
     snb_name[NETBIOS_NAME_LENGTH-1] := Port;
   end;
 end;
 
-{$IFDEF WS2_DLL_DYNAMIC_LOAD}	
-initialization
-	WS2StubInit;
-finalization
-	WS2Unload;	
-{$ENDIF}
 end.

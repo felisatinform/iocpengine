@@ -9,14 +9,14 @@
 // implied. See the License for the specific language governing
 // rights and limitations under the License.
 {$I DnConfig.inc}
-unit DnTLSRequestor;
+unit DnTlsRequestor_StreamSec;
 interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   WS2,
   DnConst, DnRtl, DnInterfaces, DnTcpReactor, DnTcpAbstractRequestor,
-  DnTlsRequests, DnTcpRequests, DnTcpRequestor, DnTcpChannel, DnTcpRequest,
+  DnTlsRequests_StreamSec, DnTcpRequests, DnTcpRequestor, DnTcpChannel, DnTcpRequest,
   DnAbstractLogger,
   StreamSecII, TlsClass, MpX509, Asn1,
   TlsInternalServer, SecComp, SecUtils;

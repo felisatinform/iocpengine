@@ -30,7 +30,7 @@ type
     procedure DoWriteFileError( Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
                                 ErrorCode: Cardinal ); virtual;
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent);override{$ENDIF};
+    constructor Create(AOwner: TComponent);override;
     destructor  Destroy; override;
     procedure   RequestFileWrite(Channel: TDnTcpChannel; Key: Pointer; const FileName: String;
                                   StartPos, FinishPos: Int64); overload;
@@ -47,14 +47,12 @@ implementation
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnTcpFileWriter]);
-  {$ENDIF}
 end;
 
-constructor TDnTcpFileWriter.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnTcpFileWriter.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FFileWritten := Nil;
   FFileWriteError := Nil;
 end;

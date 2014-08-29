@@ -28,7 +28,7 @@ type
     function TurnOn: Boolean; override;
     function TurnOff: Boolean; override;
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure  LogMsg(Level: TDnLogLevel; const Msg: String); overload; override;
   published
@@ -39,9 +39,9 @@ procedure Register;
 
 implementation
 
-constructor TDnCallbackLogger.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnCallbackLogger.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FOnLog := Nil;
 end;
 
@@ -75,9 +75,7 @@ end;
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnCallbackLogger]);
-  {$ENDIF}
 end;
 
 end.

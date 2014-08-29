@@ -60,11 +60,7 @@ type
   TCommonMsgClientAggregator = class;
 {$ENDIF}
 
-{$IFDEF ROOTISCOMPONENT}
   TCommonMsgClient = class(TComponent)
-{$ELSE}
-  TCommonMsgClient = class
-{$ENDIF}
   protected
     FPort: Word;
     FHost: AnsiString;
@@ -131,11 +127,7 @@ type
     procedure PostHeartbeatMsg;
 
   public
-{$IFDEF ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent); override;
-{$ELSE}
-    constructor Create;
-{$ENDIF}
     destructor Destroy; override;
     procedure Init;
 
@@ -423,22 +415,12 @@ begin
   inherited Destroy;
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 
 constructor TCommonMsgClient.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   Init;
 end;
-
-{$ELSE}
-
-constructor TCommonMsgClient.Create;
-begin
-  inherited Create;
-  Init;
-end;
-{$ENDIF}
 
 destructor TCommonMsgClient.Destroy;
 begin

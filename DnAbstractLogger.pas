@@ -31,12 +31,7 @@ type
                   llInformation,
                   llLowLevel );
 
-
-  {$IFDEF ROOTISCOMPONENT}
   TDnAbstractLogger = class(TComponent)
-  {$ELSE}
-  TDnAbstractLogger = class(TObject)
-  {$ENDIF}
   protected
     FShowProcessId,
     FShowThreadId,
@@ -59,7 +54,7 @@ type
     function  TurnOff: Boolean; virtual; abstract;
 
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     procedure  LogMsg(Level: TDnLogLevel; const Msg: String); overload; virtual; abstract;
@@ -80,9 +75,9 @@ type
 implementation
 
 
-constructor TDnAbstractLogger.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnAbstractLogger.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FLevel := llMandatory;
   FShowProcessId := False; FProcessIdWidth := 5;
   FShowThreadId := False; FThreadIdWidth := 5;

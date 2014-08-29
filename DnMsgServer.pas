@@ -73,11 +73,7 @@ type
   //occurs when stream is sent (written to socket buffer at least)
   TOnStreamSentEvent = procedure (Sender: TObject; Client: TClientRec; Stream: TStream) of object;
 
-{$IFDEF ROOTISCOMPONENT}
   TCommonMsgServer = class(TComponent)
-{$ELSE}
-  TCommonMsgServer = class
-{$ENDIF}
   protected
     FOnClientConnected: TOnClientConnectedEvent;
     FOnClientDisconnected: TOnClientDisconnectedEvent;
@@ -130,11 +126,7 @@ type
     procedure HandleBodyRead(Channel: TDnTcpChannel; Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 
   public
-{$IFDEF ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent); override;
-{$ELSE}
-    constructor Create;
-{$ENDIF}
     destructor Destroy; override;
 
     procedure Open;
@@ -195,7 +187,6 @@ begin
   inherited Destroy;
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 constructor TCommonMsgServer.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -203,15 +194,6 @@ begin
   FClientList := TObjectList.Create(False);
   FGuard := TCriticalSection.Create;
 end;
-{$ELSE}
-constructor TCommonMsgServer.Create;
-begin
-  inherited Create;
-
-  FClientList := TObjectList.Create(False);
-  FGuard := TCriticalSection.Create;
-end;
-{$ENDIF}
 
 destructor TCommonMsgServer.Destroy;
 begin
@@ -228,22 +210,14 @@ begin
   //create pieces of engine
   FShutdown := False;
 
-{$IFDEF ROOTISCOMPONENT}
   FReactor := TDnTcpReactor.Create(Nil);
   FListener := TDnTcpListener.Create(Nil);
   FRequestor := TDnTcpRequestor.Create(Nil);
   FExecutor := TDnSimpleExecutor.Create(Nil);
   FLogger := TDnFileLogger.Create(Nil);
   FWinsock := TDnWinsockMgr.Create(Nil);
-{$ELSE}
-  FReactor := TDnTcpReactor.Create;
-  FListener := TDnTcpListener.Create;
-  FRequestor := TDnTcpRequestor.Create;
-  FExecutor := TDnSimpleExecutor.Create;
-  FLogger := TDnFileCachedLogger.Create;
-  FWinsock := TDnWinsockMgr.Create;
-{$ENDIF}
-  //bind all together
+
+  // Bind all together
   (FLogger as TDnFileLogger).FileName := 'HighApp.log';
   FLogger.MinLevel := llCritical;
   FReactor.Logger := FLogger;

@@ -270,6 +270,16 @@ const
   GEN_IPADD = 7 or V_ASN1_CONTEXT_SPECIFIC;
   GEN_RID = 8 or V_ASN1_CONTEXT_SPECIFIC;
 
+  SSL_ERROR_NONE = 0;
+  SSL_ERROR_SSL	= 1;
+  SSL_ERROR_WANT_READ	= 2;
+  SSL_ERROR_WANT_WRITE = 3;
+  SSL_ERROR_WANT_X509_LOOKUP = 4;
+  SSL_ERROR_SYSCALL	= 5;
+  SSL_ERROR_ZERO_RETURN	= 6;
+  SSL_ERROR_WANT_CONNECT = 7;
+  SSL_ERROR_WANT_ACCEPT	= 8;
+
 type
 // Check the correct "Char" type to use according to the Delphi Version
 {$IF CompilerVersion >= 20}
@@ -929,6 +939,8 @@ function sk_value(st: pointer; i: integer): pointer; cdecl;
 function  SSLv23_method(): Pointer; cdecl;
 function  SSL_CTX_new(Method: Pointer): Pointer; cdecl;
 procedure SSL_CTX_free(SSL_CTX: Pointer); cdecl;
+function  SSL_connect(SSL: Pointer): Integer; cdecl;
+function  SSL_accept(SSL: Pointer): Integer; cdecl;
 procedure SSL_set_connect_state(SSL: Pointer); cdecl;
 procedure SSL_set_accept_state(SSL: Pointer); cdecl;
 function  SSL_read(SSL: Pointer; Buf: Pointer; Num: Integer): Integer; cdecl;
@@ -936,6 +948,7 @@ function  SSL_write(SSL: Pointer; const Buf: Pointer; Num: Integer): Integer; cd
 function  SSL_new(SSL_CTX: Pointer): Pointer; cdecl;
 procedure SSL_free(SSL: Pointer); cdecl;
 procedure SSL_set_bio(SSL: Pointer; InputBio, OutputBio: Pointer); cdecl;
+function  SSL_get_error(SSL: Pointer; Code: Integer): Integer; cdecl;
 
 // BIO functions
 function BIO_new(_type: PBIO_METHOD): PBIO; cdecl;
@@ -1579,16 +1592,19 @@ function sk_push; external LIBEAY_DLL_NAME;
 function sk_num; external LIBEAY_DLL_NAME;
 function sk_value; external LIBEAY_DLL_NAME;
 
-function  SSLv23_method; external LIBEAY_DLL_NAME;
-function  SSL_CTX_new; external LIBEAY_DLL_NAME;
-procedure SSL_CTX_free; external LIBEAY_DLL_NAME;
-procedure SSL_set_connect_state; external LIBEAY_DLL_NAME;
-procedure SSL_set_accept_state; external LIBEAY_DLL_NAME;
-function  SSL_read; external LIBEAY_DLL_NAME;
-function  SSL_write; external LIBEAY_DLL_NAME;
-function  SSL_new; external LIBEAY_DLL_NAME;
-procedure SSL_free; external LIBEAY_DLL_NAME;
-procedure SSL_set_bio; external LIBEAY_DLL_NAME;
+function  SSLv23_method; external LIBSSL_DLL_NAME;
+function  SSL_CTX_new; external LIBSSL_DLL_NAME;
+procedure SSL_CTX_free; external LIBSSL_DLL_NAME;
+function  SSL_connect; external LIBSSL_DLL_NAME;
+function  SSL_accept; external LIBSSL_DLL_NAME;
+procedure SSL_set_connect_state; external LIBSSL_DLL_NAME;
+procedure SSL_set_accept_state; external LIBSSL_DLL_NAME;
+function  SSL_read; external LIBSSL_DLL_NAME;
+function  SSL_write; external LIBSSL_DLL_NAME;
+function  SSL_new; external LIBSSL_DLL_NAME;
+procedure SSL_free; external LIBSSL_DLL_NAME;
+procedure SSL_set_bio; external LIBSSL_DLL_NAME;
+function  SSL_get_error; external LIBSSL_DLL_NAME;
 
 function BIO_new; external LIBEAY_DLL_NAME;
 function BIO_new_file; external LIBEAY_DLL_NAME;

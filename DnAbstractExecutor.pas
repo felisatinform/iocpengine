@@ -23,11 +23,7 @@ type
   TDnDestroyContext = procedure (Context: TDnThreadContext) of object;
   
   
-  {$IFDEF ROOTISCOMPONENT}
   TDnAbstractExecutor = class(TComponent)
-  {$ELSE}
-  TDnAbstractExecutor = class(TObject)
-  {$ENDIF}
   protected
     FLogger:            TDnAbstractLogger;
     FLogLevel:          TDnLogLevel;
@@ -35,14 +31,12 @@ type
     FOnDestroyContext:  TDnDestroyContext;
     FActive:            Boolean;
     
-    {$IFDEF ROOTISCOMPONENT}
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
-    {$ENDIF}
     function  TurnOn: Boolean; virtual; abstract;
     function  TurnOff: Boolean; virtual; abstract;
     procedure SetActive(Value: Boolean);
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
     function    PostEvent(Event: TDnTcpRequest): Boolean; virtual; abstract;
   published
@@ -57,22 +51,20 @@ type
 
 implementation
 
-constructor TDnAbstractExecutor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnAbstractExecutor.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
 
   FOnCreateContext := Nil;
   FOnDestroyContext := Nil;
   FActive := False;
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 procedure TDnAbstractExecutor.Notification(AComponent: TComponent; Operation: TOperation);
 begin
   if (AComponent = FLogger) and (Operation = opRemove) then
     FLogger := Nil;
 end;
-{$ENDIF}
 
 destructor  TDnAbstractExecutor.Destroy;
 begin

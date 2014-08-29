@@ -35,7 +35,7 @@ type
     function TurnOn: Boolean; override;
     function TurnOff: Boolean; override;
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure  LogMsg(Level: TDnLogLevel; const Msg: String); override;
   published
@@ -52,15 +52,13 @@ type
     destructor Destroy; override;
   end;
   
-{$IFDEF ROOTISCOMPONENT}
 procedure Register;
-{$ENDIF}
 
 implementation
 
 constructor TDnFileCachedLogger.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FFlushInterval := 5000; //5 seconds
   FFlushSize := 1024 * 100; //100 KB
   FCountBytes := 0;
@@ -176,11 +174,9 @@ begin
   end;
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 procedure Register;
 begin
   RegisterComponents('DNet', [TDnFileCachedLogger]);
 end;
-{$ENDIF}
 
 end.

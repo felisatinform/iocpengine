@@ -40,12 +40,10 @@ implementation
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet',
     [TDnFileCachedLogger, TDnCallbackLogger, TDnSimpleExecutor, TDnTcpRequestor,
      TDnHttpRequestor, TDnTcpReactor, TDnTcpListener, TDnTcpConnecter, TDnTcpFileWriter,
      TDnWinsockMgr, TDnHttpServer]);
-  {$ENDIF}
 end;
 
 end.

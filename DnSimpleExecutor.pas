@@ -24,11 +24,7 @@ type
     function    TurnOn: Boolean; override;
     function    TurnOff: Boolean; override;
   public
-    {$IFDEF ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent); override;
-    {$ELSE}
-    constructor Create;
-    {$ENDIF}
     destructor  Destroy; override;
     function    PostEvent(Event: TDnTcpRequest): Boolean; override;
   end;
@@ -38,9 +34,9 @@ procedure Register;
 implementation
 
 
-constructor TDnSimpleExecutor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnSimpleExecutor.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FLogger := Nil;
   FLogLevel := llMandatory;
   FActive := False;
@@ -91,9 +87,7 @@ end;
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnSimpleExecutor]);
-  {$ENDIF}
 end;
 
 end.

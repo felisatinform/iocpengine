@@ -19,25 +19,16 @@ type
     function  TurnOff: Boolean; override;
 
   public
-    {$ifdef ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent; aLog : TabsLog); virtual; reintroduce;
-    {$else}
-    constructor Create(aLog : TabsLog);
-    {$endif}
-
     destructor Destroy; override;
     procedure     LogMsg(Level: TDnLogLevel; const Msg: String); override;
   end;
 
 implementation
 
-{$IFDEF ROOTISCOMPONENT}
 constructor TDnLogger.Create(AOwner: TComponent; aLog : TabsLog);
-{$ELSE}
-constructor TDnLogger.Create(aLog : TabsLog);
-{$ENDIF}
 begin
-  inherited Create({$IFDEF ROOTISCOMPONENT}AOwner{$ENDIF});
+  inherited Create(AOwner);
   FLog := Alog;  // uses, but does not own log
   FActive := True;
 end;

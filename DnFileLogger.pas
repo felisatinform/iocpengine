@@ -31,11 +31,7 @@ type
     function TurnOn: Boolean; override;
     function TurnOff: Boolean; override;
   public
-    {$IFDEF ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent); override;
-    {$ELSE}
-    constructor Create;
-    {$ENDIF}
     destructor Destroy; override;
     procedure  LogMsg(Level: TDnLogLevel; const Msg: String); override;
   published
@@ -48,15 +44,9 @@ procedure Register;
 
 implementation
 
-{$IFDEF ROOTISCOMPONENT}
 constructor TDnFileLogger.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-{$ELSE}
-constructor TDnFileLogger.Create;
-begin
-  inherited Create;
-{$ENDIF}
   FRewriteLog := False;
   FGuard := TDnMutex.Create;
   //FShowProcessId := True;

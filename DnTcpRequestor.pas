@@ -96,7 +96,7 @@ type
 
 
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent);override{$ENDIF};
+    constructor Create(AOwner: TComponent);override;
     destructor Destroy; override;
     procedure Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
     procedure ReadString(Channel: TDnTcpChannel; Key: Pointer; Size: Integer);
@@ -125,16 +125,14 @@ implementation
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnTcpRequestor]);
-  {$ENDIF}
 end;
 
 //----------------------------------------------------------------------------
 
-constructor TDnTcpRequestor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnTcpRequestor.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FTcpRead := Nil;
   FTcpWrite := Nil;
   FTcpError := Nil;

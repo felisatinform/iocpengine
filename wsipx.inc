@@ -41,9 +41,7 @@ type
 		sa_socket : u_short;
 	end;
 	TSOCKADDR_IPX = SOCKADDR_IPX;
-  TSockAddrIPX = SOCKADDR_IPX;
 	PSOCKADDR_IPX = ^SOCKADDR_IPX;
-  PSockAddrIPX = ^SOCKADDR_IPX;
 	LPSOCKADDR_IPX = ^SOCKADDR_IPX;
 
 //  Protocol families used in the "protocol" parameter of the socket() API.

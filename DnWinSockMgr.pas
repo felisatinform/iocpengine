@@ -19,11 +19,7 @@ uses
   DnRtl, DnConst;
 
 type
-  {$IFDEF ROOTISCOMPONENT}
   TDnWinSockMgr = class (TComponent)
-  {$ELSE}
-  TDnWinSockMgr = class (TObject)
-  {$ENDIF}
   protected
     FWSAData: TWSAData;
     FNeedUnload: Boolean;
@@ -31,7 +27,7 @@ type
 
     procedure SetActive(Value: Boolean);
   public
-    constructor Create {$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create (AOwner: TComponent); override;
     destructor  Destroy; override;
 
   published
@@ -42,9 +38,9 @@ procedure Register;
 
 implementation
 
-constructor TDnWinsockMgr.Create {$IFDEF ROOTISCOMPONENT}(AOwner: TComponent) {$ENDIF};
+constructor TDnWinsockMgr.Create(AOwner: TComponent);
 begin
-  inherited Create {$IFDEF ROOTISCOMPONENT}(AOwner) {$ENDIF};
+  inherited Create(AOwner);
   FActive := False;
   FNeedUnload := False;
 end;
@@ -76,9 +72,7 @@ end;
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnWinSockMgr]);
-  {$ENDIF}
 end;
 
 end.

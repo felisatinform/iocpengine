@@ -19,7 +19,7 @@ type
 
   TDnTimerThread = class;
 
-  TDnTimerEngine = class
+  TDnTimerEngine = class(TComponent)
   protected
     FGuard:           TDnMutex;
     FChannelList:     TObjectList;
@@ -39,7 +39,7 @@ type
     procedure UpdateCurrentTact;
 
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
     procedure   RequestTimerNotify(Channel: TDnTcpChannel; Tacts: Cardinal;
                                     Key: Pointer);
@@ -71,9 +71,9 @@ procedure Register;
 implementation
 
 
-constructor TDnTimerEngine.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnTimerEngine.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FCurrentTact := 0;
   FGuard := Nil;
   FChannelList := TObjectList.Create(False);
@@ -188,9 +188,7 @@ end;
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
-  RegisterComponents('DNet', [TDnTimer]);
-  {$ENDIF}
+  RegisterComponents('DNet', [TDnTimerEngine]);
 end;
 
 //----------------------------------------------------------------------

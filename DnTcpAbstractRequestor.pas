@@ -19,12 +19,7 @@ uses
   DnConst, DnRtl;
 
 type
-  
-  {$IFDEF ROOTISCOMPONENT}
   TDnTcpAbstractRequestor = class(TComponent)
-  {$ELSE}
-  TDnTcpAbstractRequestor = class(TDnObject)
-  {$ENDIF}
   protected
     FReactor:   TDnTcpReactor;
     FLogLevel:  TDnLogLevel;
@@ -32,15 +27,13 @@ type
     FActive:    Boolean;
     FExecutor:  TDnAbstractExecutor;
     
-    {$IFDEF ROOTISCOMPONENT}
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
-    {$ENDIF}
     function TurnOn: Boolean; virtual;
     function TurnOff: Boolean; virtual;
     procedure SetActive(Value: Boolean);
     function CheckAvail: Boolean;
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent);override{$ENDIF};
+    constructor Create(AOwner: TComponent);override;
     destructor  Destroy; override;
     procedure   PostLogMessage(Msg: String);
   published
@@ -53,9 +46,9 @@ type
 
 implementation
 
-constructor TDnTcpAbstractRequestor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnTcpAbstractRequestor.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FReactor := Nil;
   FLogger := Nil;
   FExecutor := Nil;
@@ -95,7 +88,6 @@ begin
   Result := FActive;    
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 procedure TDnTcpAbstractRequestor.Notification(AComponent: TComponent; Operation: TOperation);
 begin
   if (AComponent = FReactor) and (Operation = opRemove) then
@@ -103,7 +95,6 @@ begin
   if (AComponent = FLogger) and (Operation = opRemove) then
     FLogger := Nil;
 end;
-{$ENDIF}
 
 procedure TDnTcpAbstractRequestor.PostLogMessage(Msg: String);
 begin

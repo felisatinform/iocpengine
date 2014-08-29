@@ -40,7 +40,7 @@ type
                            ErrorCode: Cardinal);
     procedure DoLineClose(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer);
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure ReadHttpHeader(Channel: TDnTcpChannel; Key: Pointer; MaxSize: Cardinal);
   published
@@ -53,9 +53,9 @@ procedure Register;
 
 implementation
 
-constructor TDnHttpRequestor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnHttpRequestor.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FHttpHeader := Nil;
   FHttpError := Nil;
   FHttpClose := Nil;
@@ -113,9 +113,7 @@ end;
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnHttpRequestor]);
-  {$ENDIF}
 end;
 
 end.

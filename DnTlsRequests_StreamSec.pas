@@ -9,14 +9,20 @@
 // implied. See the License for the specific language governing
 // rights and limitations under the License.
 {$I DnConfig.inc}
-unit DnTlsRequests;
+unit DnTlsRequests_StreamSec;
 interface
 uses
   Classes, SysUtils, Windows, WS2,
   DnTcpReactor, DnConst, DnInterfaces, DnRtl, DnTcpRequests, DnTcpRequest,
   DnTcpChannel,
+  {$ifdef USE_STREAMSEC2}
   StreamSecII, TlsClass, MpX509,
-  TlsInternalServer, SecComp;
+  TlsInternalServer, SecComp
+  {$endif}
+  {$ifdef USE_OPENSSL}
+  OpenSSLImport, OpenSSLUtils
+  {$endif}
+  ;
 
 type
   IDnTlsCRequestHandler = interface
@@ -69,7 +75,9 @@ type
     FWSABuf:        WSABUF;
     FFlags:         Cardinal;
     FHandler:       IDnTlsCRequestHandler;
+    {$ifdef USE_STREAMSEC2}
     FTlsServer:     TSimpleTLSInternalServer;
+    {$endif}
     FRequestStream: TMemoryStream;
     FWritten:       Cardinal;
     FState:         TDnTlsHandshakeState;
@@ -88,8 +96,12 @@ type
     procedure CallHandler(Context: TDnThreadContext); override;
 
   public
+    {$ifdef USE_STREAMSEC2}
     constructor Create(Channel: TDnTcpChannel; Key: Pointer; Handler: IDnTlsCRequestHandler;
       TlsServer: TSimpleTLSInternalServer);
+    {$endif}
+    {$ifdef USE_OPENSSL}
+    {$endif}
     destructor  Destroy; override;
   end;
 
@@ -98,7 +110,9 @@ type
   protected
     FWSABuf:              WSABUF;
     FFlags:               Cardinal;
+    {$ifdef USE_STREAMSEC2}
     FTLSServer:           TSimpleTLSInternalServer;
+    {$endif}
     FHandler:             IDnTlsSResponseHandler;
     FWritten:             Cardinal;
     FRequestStream,
@@ -118,9 +132,10 @@ type
     procedure CallHandler(Context: TDnThreadContext); override;
 
   public
+    {$ifdef USE_STREAMSEC2}
     constructor CreateFromString(Channel: TDnTcpChannel; Key: Pointer; Handler: IDnTlsSResponseHandler;
       TLSServer: TSimpleTLSInternalServer; Response: RawByteString);
-
+    {$endif}
     destructor Destroy; override;
   end;
 
@@ -158,7 +173,9 @@ type
   protected
     FWSABuf:              WSABUF;
     FFlags:               Cardinal;
+    {$ifdef USE_STREAMSEC}
     FTLSServer:           TSimpleTLSInternalServer;
+    {$endif}
     FHandler:             IDnTlsCloseNotifyHandler;
     FWritten:             Cardinal;
     FRequestStream,

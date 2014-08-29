@@ -51,12 +51,7 @@ type
     property SignalType: Integer read FSignalType;
     property Channel: TDnTcpChannel read FChannel;
   end;
-{$IFDEF ROOTISCOMPONENT}
-
   TDnTcpReactor = class(TComponent, IDnTimerSupport)
-{$ELSE}
-    TDnTcpReactor = class(TDnObject, IDnTimerSupport)
-{$ENDIF}
     protected FPort: THandle;
 
     FActive: Boolean;
@@ -90,13 +85,10 @@ type
     procedure PostTimerMessage(Item: TObject);
     procedure DoTimeoutError(Context: TDnThreadContext; Channel: TDnTcpChannel);
     procedure DoUserMessage(UserMessage: TDnUserMessage);
-{$IFDEF ROOTISCOMPONENT}
     procedure Notification(AComponent: TComponent; Operation: TOperation);
       override;
-{$ENDIF}
   public
-    constructor Create {$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override
-    {$ENDIF};
+    constructor Create (AOwner: TComponent); override;
     destructor Destroy; override;
     procedure PostChannel(Channel: TDnTcpChannel);
     procedure PostChannelError(Channel: TDnTcpChannel; Request: TDnTcpRequest);
@@ -183,13 +175,9 @@ begin
 end;
 
 // ------------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-
-constructor TDnTcpReactor.Create {$IFDEF ROOTISCOMPONENT}(AOwner: TComponent)
-{$ENDIF};
+constructor TDnTcpReactor.Create(AOwner: TComponent);
 begin
-  inherited Create {$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create (AOwner);
   FPort := 0;
   FActive := False;
   FGuard := TDnMutex.Create;
@@ -240,7 +228,6 @@ procedure TDnTcpReactor.Unlock;
 begin
   FGuard.Release;
 end;
-{$IFDEF ROOTISCOMPONENT}
 
 procedure TDnTcpReactor.Notification(AComponent: TComponent;
   Operation: TOperation);
@@ -253,7 +240,6 @@ begin
       FExecutor := Nil;
   end;
 end;
-{$ENDIF}
 
 procedure TDnTcpReactor.SetActive(Value: Boolean);
 begin
@@ -350,7 +336,7 @@ begin
   end;
   WS2.closesocket(TempSocket);
 
-  FTimer := TDnTimerEngine.Create;
+  FTimer := TDnTimerEngine.Create(Nil);
   FTimer.TimerSink := Self;
   FTimer.Active := True;
 {$IFDEF MANY_REACTOR_THREADS}
@@ -425,7 +411,7 @@ begin
         (WaitRes < WAIT_OBJECT_0 + FThreadList.Count) then
         FThreadList.Delete(WaitRes - WAIT_OBJECT_0)
       else
-        WaitRes := WaitRes;
+        ;//WaitRes := WaitRes;
 
     end;
 
@@ -798,9 +784,7 @@ end;
 
 procedure Register;
 begin
-{$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnTcpReactor]);
-{$ENDIF}
 end;
 
 initialization

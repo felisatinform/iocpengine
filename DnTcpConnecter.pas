@@ -40,7 +40,7 @@ type
     function TurnOn: Boolean; override;
     function TurnOff: Boolean; override;
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent);override{$ENDIF};
+    constructor Create(AOwner: TComponent);override;
     destructor  Destroy; override;
     procedure   Connect(Channel: TDnTcpChannel; Key: Pointer; TimeOut: Cardinal);
   published
@@ -55,15 +55,13 @@ implementation
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnTcpConnecter]);
-  {$ENDIF}
 end;
 
 //----------------------------------------------------------------------------
-constructor TDnTcpConnecter.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnTcpConnecter.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
   FTcpConnect := Nil;
   FTcpError := Nil;
   FWatcher := Nil;

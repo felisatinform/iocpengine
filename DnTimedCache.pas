@@ -74,7 +74,7 @@ end;
 constructor TDnCacheStrHash.Create(Logger: TDnAbstractLogger; Handler: IDnCacheTimeOutHandler);
 begin
   inherited Create;
-  FTimer := TDnTimerEngine.Create;
+  FTimer := TDnTimerEngine.Create(Nil);
   FList := TStringList.Create;
   FExecutor := TDnSimpleExecutor.Create(Nil);
   FGuard := TDnMutex.Create;

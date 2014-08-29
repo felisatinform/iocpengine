@@ -25,9 +25,9 @@ type
 		snb_type   : u_short;
 		snb_name   : array[0..NETBIOS_NAME_LENGTH-1] of Char;
 	end;
-  TSockAddrNB  = SOCKADDR_NB;
-  PSockAddrNB  = ^SOCKADDR_NB;
-  LPSOCKADDR_NB = ^SOCKADDR_NB;
+  TSockAddr_NB  = SOCKADDR_NB;
+  PSOCKADDR_NB  = ^SOCKADDR_NB;
+  LPSOCKADDR_NB = ^PSOCKADDR_NB;
 
 //	Bit values for the snb_type field of SOCKADDR_NB.
 const
@@ -37,5 +37,5 @@ const
 	NETBIOS_TYPE_QUICK_GROUP  = $0003;
 
 //	A macro convenient for setting up NETBIOS SOCKADDRs.
-procedure SET_NETBIOS_SOCKADDR( snb : PSockAddrNB; const SnbType : Word; const Name : PChar; const Port : Char );
+procedure SET_NETBIOS_SOCKADDR( snb : PSOCKADDR_NB; const SnbType : Word; const Name : PChar; const Port : Char );
 

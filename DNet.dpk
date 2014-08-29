@@ -90,8 +90,7 @@ contains
   OpenSSLUtils in 'OpenSSLUtils.pas',
   svcguid in 'svcguid.pas',
   WS2 in 'WS2.pas',
-  DnTlsRequests_OpenSSL in 'DnTlsRequests_OpenSSL.pas',
-  DnTlsRequestor_OpenSSL in 'DnTlsRequestor_OpenSSL.pas',
+  DnTlsBox in 'DnTlsBox.pas',
   DnTlsChannel in 'DnTlsChannel.pas';
 
 end.

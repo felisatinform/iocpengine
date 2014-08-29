@@ -49,13 +49,7 @@ type
 
   end;
 
-
-
-  {$IFDEF ROOTISCOMPONENT}
   TDnTcpListener = class(TComponent)
-  {$ELSE}
-  TDnTcpListener = class(TDnObject)
-  {$ENDIF}
   protected
     FActive:                Boolean;
     FNagle:                 Boolean;
@@ -88,11 +82,9 @@ type
     procedure QueueRequest;
     procedure RequestFinished;
 
-    {$IFDEF ROOTISCOMPONENT}
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
-    {$ENDIF}
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override{$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
 
     //This method can be called after Active := False to ensure all IOCP activities are stopped for this listener object
@@ -251,15 +243,9 @@ begin
 end;
 
 
-{$IFDEF ROOTISCOMPONENT}
 constructor TDnTcpListener.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-{$ELSE}
-constructor TDnTcpListener.Create;
-begin
-  inherited Create;
-{$ENDIF}
   Self._AddRef;
   FActive := False;
   FPort := 7080;
@@ -305,7 +291,6 @@ begin
   Result := Windows.WaitForSingleObject(FTurningOffSignal, 0) = WAIT_OBJECT_0;
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 procedure TDnTcpListener.Notification(AComponent: TComponent; Operation: TOperation);
 begin
   if Operation = opRemove then
@@ -320,7 +305,6 @@ begin
       FReactor := Nil;
   end;
 end;
-{$ENDIF}
 
 procedure TDnTcpListener.DoLogMessage(S: String);
 begin
@@ -476,9 +460,7 @@ end;
 
 procedure Register;
 begin
-  {$IFDEF ROOTISCOMPONENT}
   RegisterComponents('DNet', [TDnTcpListener]);
-  {$ENDIF}
 end;
 
 end.

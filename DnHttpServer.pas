@@ -76,11 +76,7 @@ type
   TDnHttpConnectedEvent = procedure (Sender: TObject; Channel: TDnHttpChannel) of object;
   TDnHttpDisconnectedEvent = procedure (Sender: TObject; Channel: TDnHttpChannel) of object;
 
-{$IFDEF ROOTISCOMPONENT}
   TDnHttpServer = class(TComponent)
-{$ELSE}
-  TDnHttpServer = class
-{$ENDIF}
   protected
     FWinsock:         TDnWinsockMgr;
     FListener:        TDnTcpListener;
@@ -141,11 +137,7 @@ type
     function      ProcessFormData (HttpChannel: TDnHttpChannel): Integer;
     procedure     SendBadRequest (HttpChannel: TDnHttpChannel);
   public
-{$IFDEF ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent); override;
-{$ELSE}
-    constructor Create;
-{$ENDIF}
     destructor  Destroy; override;
 
     procedure   SendFile(Channel: TDnHttpChannel; FileName: String);
@@ -233,21 +225,12 @@ begin
   end;
 end;
 
-{$IFDEF ROOTISCOMPONENT}
 constructor TDnHttpServer.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   AllocChain;
   FActive := False;
 end;
-{$ELSE}
-constructor TDnHttpServer.Create;
-begin
-  inherited Create;
-  AllocChain;
-  FActive := False;
-end;
-{$ENDIF}
 
 destructor TDnHttpServer.Destroy;
 begin
@@ -270,19 +253,11 @@ begin
 
   TDnCallbackLogger(FLogger).OnLogMessage := LogMessage;
 
-  {$IFDEF ROOTISCOMPONENT}
   FReactor :=   TDnTcpReactor.Create(Nil);
   FRequestor := TDnTcpRequestor.Create(Nil);
   FListener :=  TDnTcpListener.Create(Nil);
   FExecutor :=  TDnSimpleExecutor.Create(Nil);
   FFileWriter := TDnTcpFileWriter.Create(Nil);
-  {$ELSE}
-  FReactor :=   TDnTcpReactor.Create();
-  FRequestor := TDnTcpRequestor.Create();
-  FListener :=  TDnTcpListener.Create();
-  FExecutor :=  TDnSimpleExecutor.Create();
-  FFileWriter := TDnTcpFileWriter.Create();
-  {$ENDIF}
 
   FListener.OnCreateChannel := Self.ChannelCreate;
   FListener.OnIncoming := Self.ChannelConnected;

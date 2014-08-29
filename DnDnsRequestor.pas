@@ -57,7 +57,7 @@ type
     function TurnOff: Boolean; override;
 
   public
-    constructor Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent); override {$ENDIF};
+    constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
 
     // This method STARTS the resolving of host name
@@ -210,9 +210,9 @@ begin
 end;
 
 //--------------------- TDnDnsRequestor -----------------------
-constructor TDnDnsRequestor.Create{$IFDEF ROOTISCOMPONENT}(AOwner: TComponent){$ENDIF};
+constructor TDnDnsRequestor.Create(AOwner: TComponent);
 begin
-  inherited Create{$IFDEF ROOTISCOMPONENT}(AOwner){$ENDIF};
+  inherited Create(AOwner);
 end;
 
 destructor TDnDnsRequestor.Destroy;
