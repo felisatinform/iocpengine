@@ -325,14 +325,13 @@ begin
 
   TempSocket := WS2.socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
   if TempSocket = WS2.INVALID_SOCKET then
-    raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'Socket');
+    raise EDnWindowsException.Create(WSAGetLastError());
 
   FPort := CreateIOCompletionPort(TempSocket, 0, 0, 1);
   if FPort = 0 then
   begin
     WS2.closesocket(TempSocket);
-    raise EDnException.Create(ErrWin32Error, GetLastError(),
-      'CreateIOCompletionPort');
+    raise EDnWindowsException.Create(GetLastError());
   end;
   WS2.closesocket(TempSocket);
 
@@ -461,7 +460,7 @@ begin
   try
     // check at first if such channel exists already
     if CreateIOCompletionPort(Channel.SocketHandle, FPort, Cardinal(Pointer(Channel)), 1) = 0 then
-      raise EDnException.Create(ErrWin32Error, GetLastError(), 'CreateIOCompletionPort');
+      raise EDnWindowsException.Create(GetLastError());
 
     // check at first if such channel object is already in
     ChannelIndex := FChannelList.IndexOf(Channel);

@@ -147,14 +147,14 @@ begin
   //create socket for future channel
   FAcceptSocket := WS2.WSASocketA(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FAcceptSocket = INVALID_SOCKET then
-    raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'WSASocket');
+    raise EDnWindowsException.Create(WSAGetLastError());
 
   //run acceptex query
   if AcceptEx(FListener.FSocket, FAcceptSocket, @FAcceptBuffer[1], 0, sizeof(TSockAddrIn)+16,
               sizeof(TSockAddrIn)+16, FAcceptReceived, POverlapped(@Self.FContext)) = FALSE then
   begin
     if WSAGetLastError() <> ERROR_IO_PENDING then
-      raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'AcceptEx');
+      raise EDnWindowsException.Create(WSAGetLastError());
   end;
 end;
 
@@ -347,7 +347,7 @@ begin
   // Create listening socket
   FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FSocket = INVALID_SOCKET then
-    raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'WSASocket');
+    raise EDnWindowsException.Create(WSAGetLastError());
   FillChar(FAddr, SizeOf(FAddr), 0);
   FAddr.sin_family := AF_INET;
   FAddr.sin_port := WS2.htons(FPort);
@@ -362,10 +362,10 @@ begin
 
   // Bind socket
   if WS2.Bind(TSocket(FSocket), @FAddr, sizeof(FAddr)) = -1 then
-    raise EDnException.Create(ErrWin32Error, WSAGetLastError, Format('Bind failed. Port is %d', [FPort]));
+    raise EDnWindowsException.Create(WSAGetLastError());
 
   if WS2.Listen(FSocket, FBackLog) = -1 then
-    raise EDnException.Create(ErrWin32Error, WSAGetLastError(), Format('Listen failed. Port is %d.', [FPort]));
+    raise EDnWindowsException.Create(WSAGetLastError());
 
   // Queue AcceptEx request
   QueueRequest;

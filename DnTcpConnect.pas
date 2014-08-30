@@ -235,7 +235,7 @@ begin
     if ConnectRequest.FErrorCode <> WSAEWOULDBLOCK then
     begin
 
-      //check if it is ok
+      // Check if it is ok
       if ConnectRequest.FErrorCode = 0 then
         FReactor.PostChannel(Channel); //bind new channel to IOCP //channel is already added
       FExecutor.PostEvent(ConnectRequest); //post event to executor

@@ -236,8 +236,7 @@ begin
   FReactor := Reactor;
   FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FSocket = INVALID_SOCKET then
-    raise EDnException.Create(ErrWin32Error, WSAGetLastError(), 'WSASocket');
-
+    raise EDnWindowsException.Create(WSAGetLastError());
 
   InitClient(RemoteIP, Port);
 end;

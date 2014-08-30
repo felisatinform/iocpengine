@@ -39,6 +39,11 @@ type
     property    ErrorSubCode: Integer read FErrorSubCode;
   end;
 
+  EDnWindowsException = class(EDnException)
+  public
+    constructor Create(ErrorCode: Integer);
+  end;
+
   TDnLogEvent = procedure (Msg: String) of object;
 
   TDnMutex = class
@@ -251,6 +256,35 @@ begin
 end;
 //-----------------------------------------------------------------------
 
+function GetErrorText(ErrorCode: Integer): string;
+var
+  dwSize: DWORD;
+  lpszTemp: PWideChar;
+begin
+  dwSize := 1024;
+  lpszTemp := nil;
+  try
+    GetMem(lpszTemp, dwSize);
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM or FORMAT_MESSAGE_ARGUMENT_ARRAY,
+      nil,
+      ErrorCode,
+      LANG_NEUTRAL,
+      lpszTemp,
+      dwSize,
+      nil)
+  finally
+    Result := lpszTemp;
+    FreeMem(lpszTemp)
+  end
+end;
+
+constructor EDnWindowsException.Create(ErrorCode: Integer);
+var MsgBuf: PAnsiChar;
+begin
+  inherited Create(ErrWin32, ErrorCode);
+
+  FErrorMessage := GetErrorText(ErrorCode);
+end;
 
 constructor TDnMutex.Create;
 begin
@@ -278,7 +312,7 @@ constructor TDnEvent.Create;
 begin
   FEvent := CreateEvent(Nil, False, False, Nil);
   if FEvent = 0 then
-    raise EDnException.Create(ErrWin32Error, GetLastError(), 'CreateEvent');
+    raise EDnWindowsException.Create(GetLastError());
 end;
 
 destructor TDnEvent.Destroy;
@@ -308,7 +342,7 @@ begin
     Result := dwrSignaled
   else if ResCode = WAIT_TIMEOUT then
     Result := dwrTimeOut
-  else raise EDnException.Create(ErrWin32Error, GetLastError(), 'WaitForSingleObject');
+  else raise EDnWindowsException.Create(GetLastError());
 end;
 
 function TDnEvent.WaitFor: TDnWaitResult;
@@ -321,7 +355,7 @@ begin
     Result := dwrSignaled
   else if ResCode = WAIT_TIMEOUT then
     Result := dwrTimeOut
-  else raise EDnException.Create(ErrWin32Error, GetLastError(), 'WaitForSingleObject');
+  else raise EDnWindowsException.Create(GetLastError());
 end;
 //--------------------------------------------------------------------------
 
@@ -384,7 +418,7 @@ begin
   inherited Create;
   FSemaphore := CreateSemaphore(Nil, InitialCount, MaxCount, Nil);
   if FSemaphore = 0 then
-    raise EDnException.Create(ErrWin32Error, GetLastError(), 'CreateSemaphore');
+    raise EDnWindowsException.Create(GetLastError());
 end;
 
 destructor TDnSemaphore.Destroy;
@@ -530,7 +564,7 @@ begin
   FileHandle := CreateFile(PChar(FileName), GENERIC_READ, FILE_SHARE_READ, Nil,
                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
   if FileHandle = INVALID_HANDLE_VALUE then
-    raise EDnException.Create(ErrWin32Error, GetLastError(), 'CreateFile');
+    raise EDnWindowsException.Create(GetLastError());
   ResLo := GetFileSize(FileHandle, @ResHi);
   CloseHandle(FileHandle);
   Result := ResLo + (ResHi shl 32);

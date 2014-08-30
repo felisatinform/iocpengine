@@ -13,7 +13,7 @@ unit DnConst;
 interface
 
 const
-  ErrWin32Error =                   0;
+  ErrWin32 =                        0;
   ErrInvalidParameter =             1;
   ErrObjectNotActive =              2;
   ErrCannotGetCGIParamValue =       3;

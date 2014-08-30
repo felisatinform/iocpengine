@@ -31,7 +31,7 @@
 unit OpenSSLUtils;
 
 interface
-uses OpenSSLImport, SysUtils;
+uses OpenSSLImport, SysUtils, SyncObjs;
 
 type
 EOpenSSL = class(Exception)
@@ -144,9 +144,9 @@ uses DateUtils;
 
 constructor EOpenSSL.Create(Msg: string);
 begin
-inherited Create(Msg);
-OpenSSLError := ERR_get_error;
-OpenSSLErrorMessage := GetErrorMessage;
+  inherited Create(Msg);
+  OpenSSLError := ERR_get_error;
+  OpenSSLErrorMessage := GetErrorMessage;
 end;
 
 (************************************
@@ -170,15 +170,56 @@ case Encoding of
   end;
 end;
 
-procedure AppStartup;
+type
+  SslMutexes = array[0..$FFFFFFF] of TCriticalSection;
+  PSslMutexes = ^SslMutexes;
+
+  TSslMutex = record
+    FGuard: TCriticalSection;
+  end;
+  PSslMutex = ^TSslMutex;
+
+var
+  Mutexes: PSslMutexes;
+
+procedure SslLockCallback(Mode: Integer; N: Integer; Filename: PAnsiChar; Line: Integer); cdecl;
 begin
-//_fmode := _O_BINARY;
-//do_pipe_sig;
-//CRYPTO_malloc_init();
-OpenSSL_add_all_algorithms;
-OpenSSL_add_all_ciphers;
-OpenSSL_add_all_digests;
-ERR_load_crypto_strings;
+  if Mode and OpenSSLImport.CRYPTO_LOCK <> 0 then
+    Mutexes^[N].Enter()
+  else
+  if Mode and OpenSSLImport.CRYPTO_UNLOCK <> 0 then
+    Mutexes^[N].Leave();
+end;
+
+function SslLockDynCreateCallback(Filename: PAnsiChar; Line: Integer): PSslMutex; cdecl;
+begin
+  GetMem(Result, Sizeof(TSslMutex));
+  Result.FGuard := TCriticalSection.Create();
+end;
+
+procedure SslLockDynDestroyCallback(SslMutex: PSslMutex; Filename: PAnsiChar; Line: Integer); cdecl;
+begin
+  SslMutex.FGuard.Free;
+  FreeMem(SslMutex);
+end;
+
+procedure AppStartup;
+var i, LockCount: Integer;
+begin
+  LockCount := OpenSSLImport.CRYPTO_num_locks();
+  GetMem(Mutexes, LockCount * sizeof(TCriticalSection));
+  for i := 0 to LockCount-1 do
+    Mutexes^[i] := TCriticalSection.Create();
+
+  OpenSSLImport.CRYPTO_set_locking_callback(@SslLockCallback);
+  OpenSSLImport.SSL_library_init();
+
+  OpenSSL_add_all_algorithms;
+  OpenSSL_add_all_ciphers;
+  OpenSSL_add_all_digests;
+  OpenSSLImport.ERR_load_crypto_strings;
+  OpenSSLImport.SSL_load_error_strings;
+
 end;
 
 function GetErrorMessage: string;

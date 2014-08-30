@@ -125,7 +125,7 @@ begin
   if LongBool(PostQueuedCompletionStatus( (ChannelImpl.Reactor as TDnTcpReactor).PortHandle, WasRead,
                                 Cardinal(Pointer(FChannel)), @FContext )) = False
   then
-    raise EDnException.Create(ErrWin32Error, GetLastError(), 'PostQueuedCompletionStatus');
+    raise EDnWindowsException.Create(GetLastError());
 end;
 
 procedure TDnTcpRequest.Execute;

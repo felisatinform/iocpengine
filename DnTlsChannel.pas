@@ -1,7 +1,7 @@
 unit DnTlsChannel;
 interface
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, AnsiStrings,
   DnConst, DnRtl, DnTcpChannel, DnDataQueue,
   OpenSSLImport, OpenSSLUtils;
 
@@ -10,6 +10,11 @@ const
   TlsIncomingBufferSize = 16384;
 
 type
+  EDnSslException = class(EDnException)
+  public
+    constructor Create(ErrorCode: Integer);
+  end;
+
   TDnTlsChannel = class(TDnTcpChannel)
   protected
     // OpenSSL's BIO buffers
@@ -63,8 +68,21 @@ type
 
 implementation
 
+constructor EDnSslException.Create(ErrorCode: Integer);
+var Buf: AnsiString;
+begin
+  inherited Create(ErrSsl, ErrorCode);
+
+  SetLength(Buf, 512);
+  OpenSSLImport.ERR_error_string(ErrorCode, @Buf[1]);
+  SetLength(Buf, AnsiStrings.StrLen(@Buf[1]));
+  FErrorMessage := Buf;
+end;
+
 procedure TDnTlsChannel.InitChannel;
 begin
+  inherited InitChannel();
+
   FWriting := False;
   FIncomingAppData := TDnDataQueue.Create(TlsDecodedBufferSize, TlsDecodedBufferSize);
   FOutgoingAppData := TDnDataQueue.Create(TlsDecodedBufferSize, TlsDecodedBufferSize);
@@ -73,10 +91,11 @@ begin
 
   FSSL_CTX := OpenSSLImport.SSL_CTX_new(OpenSSLImport.SSLv23_method());
   if not Assigned(FSSL_CTX) then
-    raise EDnException.Create(ErrSSL, OpenSSLImport.ERR_get_error());
+    raise EDnSslException.Create(OpenSSLImport.ERR_get_error());
+
   FSSL := OpenSSLImport.SSL_new(FSSL_CTX);
   if not Assigned(FSSL) then
-    raise EDnException.Create(ErrSSL, OpenSSLImport.ERR_get_error());
+    raise EDnSslException.Create(OpenSSLImport.ERR_get_error());
 
   FInputBio := OpenSSLImport.BIO_new(OpenSSLImport.BIO_s_mem);
   FOutputBio := OpenSSLImport.BIO_new(OpenSSLImport.BIO_s_mem);
@@ -126,7 +145,7 @@ var
 begin
   // Send received data to OpenSSL associated buffer
   if OpenSSLImport.BIO_write(FInputBio, Buffer, Size) < 1 then
-    raise EDnException.Create(ErrSsl, OpenSSLImport.ERR_get_error);
+    raise EDnSslException.Create(OpenSSLImport.ERR_get_error());
 
   // See how much was received application data
   repeat

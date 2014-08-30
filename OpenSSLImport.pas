@@ -280,6 +280,11 @@ const
   SSL_ERROR_WANT_CONNECT = 7;
   SSL_ERROR_WANT_ACCEPT	= 8;
 
+  CRYPTO_LOCK = 1;
+  CRYPTO_UNLOCK	= 2;
+  CRYPTO_READ	=	4;
+  CRYPTO_WRITE = 8;
+
 type
 // Check the correct "Char" type to use according to the Delphi Version
 {$IF CompilerVersion >= 20}
@@ -726,15 +731,15 @@ procedure OpenSSL_add_all_algorithms;
 procedure OpenSSL_add_all_ciphers; cdecl;
 procedure OpenSSL_add_all_digests; cdecl;
 procedure EVP_cleanup(); cdecl;
+procedure SSL_library_init; cdecl;
 
-procedure ERR_load_strings; cdecl;
+procedure ERR_load_crypto_strings; cdecl;
 function ERR_get_error: cardinal; cdecl;
 function ERR_peek_error: cardinal; cdecl;
 function ERR_peek_last_error: cardinal; cdecl;
 function ERR_error_string(e: cardinal; buf: PCharacter): PCharacter; cdecl;
-procedure ERR_clear_error;
-procedure ERR_load_crypto_strings;
-procedure ERR_free_strings;
+procedure ERR_clear_error; cdecl;
+procedure ERR_free_strings; cdecl;
 
 // Low level debugable memory management function
 type
@@ -752,6 +757,7 @@ function CRYPTO_set_locking_callback(Callback: TCryptoLockingCallback): Integer;
 procedure CRYPTO_set_dynlock_create_callback(Callback: TCryptoCreateDynLockCallback); cdecl;
 procedure CRYPTO_set_dynlock_lock_callback(Callback: TCryptoLockDynLockCallback); cdecl;
 procedure CRYPTO_set_dynlock_destroy_callback(Callback: TCryptoDestroyDynLockCallback); cdecl;
+function  CRYPTO_num_locks: Integer; cdecl;
 
 function CRYPTO_malloc(length: longint; const f: PCharacter; line: integer): pointer; cdecl;
 function CRYPTO_realloc(str: PCharacter; length: longint; const f: PCharacter; line: integer): pointer; cdecl;
@@ -949,6 +955,7 @@ function  SSL_new(SSL_CTX: Pointer): Pointer; cdecl;
 procedure SSL_free(SSL: Pointer); cdecl;
 procedure SSL_set_bio(SSL: Pointer; InputBio, OutputBio: Pointer); cdecl;
 function  SSL_get_error(SSL: Pointer; Code: Integer): Integer; cdecl;
+procedure SSL_load_error_strings; cdecl;
 
 // BIO functions
 function BIO_new(_type: PBIO_METHOD): PBIO; cdecl;
@@ -1360,15 +1367,16 @@ end;
 procedure OpenSSL_add_all_ciphers; external LIBEAY_DLL_NAME;
 procedure OpenSSL_add_all_digests; external LIBEAY_DLL_NAME;
 procedure SSL_load_library_init; external LIBEAY_DLL_NAME;
+procedure SSL_load_error_strings; external LIBSSL_DLL_NAME;
+procedure SSL_library_init; external LIBSSL_DLL_NAME;
 procedure EVP_cleanup; external LIBEAY_DLL_NAME;
 
-procedure ERR_load_strings; external LIBEAY_DLL_NAME;
+procedure ERR_load_crypto_strings; external LIBEAY_DLL_NAME;
 function  ERR_get_error: cardinal; external LIBEAY_DLL_NAME;
 function  ERR_peek_error: cardinal; external LIBEAY_DLL_NAME;
 function  ERR_peek_last_error: cardinal; external LIBEAY_DLL_NAME;
 function  ERR_error_string; external LIBEAY_DLL_NAME;
 procedure ERR_clear_error; external LIBEAY_DLL_NAME;
-procedure ERR_load_crypto_strings; external LIBEAY_DLL_NAME;
 procedure ERR_free_strings; external LIBEAY_DLL_NAME;
 
 function  CRYPTO_set_locking_callback; external LIBEAY_DLL_NAME;
@@ -1379,6 +1387,7 @@ function  CRYPTO_malloc; external LIBEAY_DLL_NAME;
 function  CRYPTO_realloc; external LIBEAY_DLL_NAME;
 function  CRYPTO_remalloc; external LIBEAY_DLL_NAME;
 procedure CRYPTO_free; external LIBEAY_DLL_NAME;
+function  CRYPTO_num_locks; external LIBEAY_DLL_NAME;
 
 // Not in DLL
 function OPENSSL_malloc(length: longint): pointer;
