@@ -60,17 +60,17 @@ TKeyPairGenerator = class
     property SeedFile: TFileName read fSeedFile write fSeedFile;
 end;
 
-TX509Certificate = class
+  TX509Certificate = class
   private
-    fCertificate: pX509;
-    function getDN(pDn: pX509_NAME): String;
-    function getTime(asn1_time: pASN1_TIME): TDateTime;
+    FCertificate: PX509;
+    function GetDN(pDn: PX509_NAME): String;
+    function GetTime(Asn1_time: PASN1_TIME): TDateTime;
   protected
-    constructor Create(pCert: pX509); overload;
-    function getIssuer: String;
-    function getSubject: String;
-    function getNotBefore: TDateTime;
-    function getNotAfter: TDateTime;
+    constructor Create(PCert: pX509); overload;
+    function GetIssuer: String;
+    function GetSubject: String;
+    function GetNotBefore: TDateTime;
+    function GetNotAfter: TDateTime;
     function VerifyCalback(ok: integer; ctx: pX509_STORE_CTX): integer;
   public
     constructor Create; overload;
@@ -84,7 +84,9 @@ TX509Certificate = class
     function IsExpired: boolean;
     function Text: String;
     procedure LoadFromFile(FileName: string); overload;
-    procedure LoadFromFile(FileName: string; Encoding: TEncoding); overload;
+    procedure LoadFromFile(FileName: string; Encoding: TEncoding; Password: PAnsiChar); overload;
+
+    property X509: PX509 read FCertificate;
   end;
 TX509CertificateArray = array of TX509Certificate;
 
@@ -448,10 +450,10 @@ end;
 
 procedure TX509Certificate.LoadFromFile(FileName: string);
 begin
-LoadFromFile(Filename, auto);
+  LoadFromFile(Filename, auto, Nil);
 end;
 
-procedure TX509Certificate.LoadFromFile(FileName: string; Encoding: TEncoding);
+procedure TX509Certificate.LoadFromFile(FileName: string; Encoding: TEncoding; Password: PAnsiChar);
 var
   certfile: pBIO;
   p12: pPKCS12;
@@ -459,46 +461,49 @@ var
   c: pX509;
   ca: pSTACK_OFX509;
 begin
-if not(Encoding in [auto, DER, PEM, NETSCAPE, PKCS12]) then
-  raise EOpenSSL.Create('Bad certificate encoding.');
-certfile := BIO_new(BIO_s_file());
-if certfile = nil then
-  raise EOpenSSL.Create('Error creating BIO.');
-BIO_read_filename(certfile, PAnsiChar(FileName));
-if (Encoding = auto) or (encoding = DER) then
+  if not(Encoding in [auto, DER, PEM, NETSCAPE, PKCS12]) then
+    raise EOpenSSL.Create('Bad certificate encoding.');
+  certfile := BIO_new(BIO_s_file());
+  if certfile = nil then
+    raise EOpenSSL.Create('Error creating BIO.');
+  BIO_read_filename(certfile, PAnsiChar(FileName));
+  if (Encoding = auto) or (encoding = DER) then
   begin
-  fCertificate := d2i_X509_bio(certfile, nil);
-  if (Encoding = auto) and (fCertificate = nil) then
-    BIO_reset(certfile);
+    FCertificate := d2i_X509_bio(certfile, nil);
+    if (Encoding = auto) and (fCertificate = nil) then
+      BIO_reset(certfile);
   end;
-if ((Encoding = auto) and (fCertificate = nil)) or (encoding = NETSCAPE) then
+  if ((Encoding = auto) and (fCertificate = nil)) or (encoding = NETSCAPE) then
   begin
   // See apps.c
   end;
-if ((Encoding = auto) and (fCertificate = nil)) or (encoding = PEM) then
+
+  if ((Encoding = auto) and (fCertificate = nil)) or (encoding = PEM) then
   begin
-  fCertificate := PEM_read_bio_X509_AUX(certfile, c, nil, nil);
-  if (Encoding = auto) and (fCertificate = nil) then
-    BIO_reset(certfile);
+    FCertificate := PEM_read_bio_X509_AUX(certfile, c, nil, nil);
+    if (Encoding = auto) and (fCertificate = nil) then
+      BIO_reset(certfile);
   end;
-if ((Encoding = auto) and (fCertificate = nil)) or (encoding = PKCS12) then
+
+  if ((Encoding = auto) and (fCertificate = nil)) or (encoding = PKCS12) then
   begin
-  p12 := d2i_PKCS12_bio(certfile, nil);
-  PKCS12_parse(p12, nil, a, c, ca);
-  fCertificate := c;
-  PKCS12_free(p12);
-  p12 := nil;
+    p12 := d2i_PKCS12_bio(certfile, nil);
+    PKCS12_parse(p12, Password, a, c, ca);
+    FCertificate := c;
+    PKCS12_free(p12);
+    p12 := nil;
   end;
-BIO_free(certfile);
-if fCertificate = nil then
-  raise EOpenSSL.Create('Unable to read certificate from file ' + FileName + '.');
+  BIO_free(certfile);
+
+  if FCertificate = nil then
+    raise EOpenSSL.Create('Unable to read certificate from file ' + FileName + '.');
 end;
 
 function TX509Certificate.VerifyCalback(ok: integer; ctx: pX509_STORE_CTX): integer;
 var
   buffer: array [0..255] of char;
 begin
-if ok=0 then
+  if ok=0 then
   begin
 		{
 		X509_NAME_oneline(
@@ -535,42 +540,42 @@ var
   uchain: pSTACK_OFX509;  // Untrusted certs
   i, verify: integer;
 begin
-cert_ctx := X509_STORE_new();
-if cert_ctx=nil then
-  raise EOpenSSL.Create('Error creating X509_STORE.');
-cert_ctx.verify_cb := nil;  // hum...........
-// Load CA certificates
-for i := 0 to High(CACertificate) do
+  cert_ctx := X509_STORE_new();
+  if cert_ctx=nil then
+    raise EOpenSSL.Create('Error creating X509_STORE.');
+  cert_ctx.verify_cb := nil;  // hum...........
+  // Load CA certificates
+  for i := 0 to High(CACertificate) do
   begin
-  if X509_STORE_add_cert(cert_ctx, CACertificate[i].fCertificate) = 0 then
-    raise EOpenSSL.Create('Unable to store X.509 cetrtificate.');
+    if X509_STORE_add_cert(cert_ctx, CACertificate[i].fCertificate) = 0 then
+      raise EOpenSSL.Create('Unable to store X.509 cetrtificate.');
   end;
-// Load untrustesd certificate
-uchain := sk_new_null;
-sk_push(uchain, fCertificate);
-// Prepare certificate
-csc := X509_STORE_CTX_new;
-if csc = nil then
-  raise EOpenSSL.Create('Error creating X509_STORE_CTX.');
-X509_STORE_CTX_init(csc, cert_ctx, fCertificate, uchain);
-verify := X509_verify_cert(csc);
-X509_STORE_CTX_free(csc);
-sk_free(uchain);
-X509_STORE_free(cert_ctx);
-result := verify = 1;
+  // Load untrustesd certificate
+  uchain := sk_new_null;
+  sk_push(uchain, fCertificate);
+  // Prepare certificate
+  csc := X509_STORE_CTX_new;
+  if csc = nil then
+    raise EOpenSSL.Create('Error creating X509_STORE_CTX.');
+  X509_STORE_CTX_init(csc, cert_ctx, fCertificate, uchain);
+  verify := X509_verify_cert(csc);
+  X509_STORE_CTX_free(csc);
+  sk_free(uchain);
+  X509_STORE_free(cert_ctx);
+  result := verify = 1;
 end;
 
 function TX509Certificate.IsTrusted(CACertificate: TX509Certificate): boolean;
 begin
-result := false;
+  result := false;
 end;
 
 function TX509Certificate.IsExpired: boolean;
 var
   now: TDateTime;
 begin
-now := Time;
-result := (NotBefore <= now) and (NotAfter >= now);
+  now := Time;
+  result := (NotBefore <= now) and (NotAfter >= now);
 end;
 
 (*
@@ -578,10 +583,10 @@ end;
 *)
 constructor TPKCS7.Create;
 begin
-fEncoding := auto;
-fPkcs7 := nil;
-fCerts := nil;
-fDetachedData := nil;
+  fEncoding := auto;
+  fPkcs7 := nil;
+  fCerts := nil;
+  fDetachedData := nil;
 end;
 
 destructor TPKCS7.Destroy;

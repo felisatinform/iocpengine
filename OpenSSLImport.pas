@@ -942,6 +942,15 @@ function sk_num(st: pointer): integer; cdecl;
 function sk_value(st: pointer; i: integer): pointer; cdecl;
 
 // SSL protocol functions
+const
+  SSL_VERIFY_NONE	= $0;
+  SSL_VERIFY_PEER	= $1;
+  SSL_VERIFY_FAIL_IF_NO_PEER_CERT	= $2;
+  SSL_VERIFY_CLIENT_ONCE = $4;
+
+type
+  TSslVerifyCallback = function (N: Integer; X509StoreCtx: PX509_STORE_CTX): Integer; cdecl;
+
 function  SSLv23_method(): Pointer; cdecl;
 function  SSL_CTX_new(Method: Pointer): Pointer; cdecl;
 procedure SSL_CTX_free(SSL_CTX: Pointer); cdecl;
@@ -956,6 +965,8 @@ procedure SSL_free(SSL: Pointer); cdecl;
 procedure SSL_set_bio(SSL: Pointer; InputBio, OutputBio: Pointer); cdecl;
 function  SSL_get_error(SSL: Pointer; Code: Integer): Integer; cdecl;
 procedure SSL_load_error_strings; cdecl;
+procedure SSL_set_verify(SSL: Pointer; Mode: Integer; Callback: TSslVerifyCallback); cdecl;
+function  SSL_use_certificate(SSL: Pointer; X509: Pointer): Integer; cdecl;
 
 // BIO functions
 function BIO_new(_type: PBIO_METHOD): PBIO; cdecl;
@@ -1368,6 +1379,8 @@ procedure OpenSSL_add_all_ciphers; external LIBEAY_DLL_NAME;
 procedure OpenSSL_add_all_digests; external LIBEAY_DLL_NAME;
 procedure SSL_load_library_init; external LIBEAY_DLL_NAME;
 procedure SSL_load_error_strings; external LIBSSL_DLL_NAME;
+procedure SSL_set_verify; external LIBSSL_DLL_NAME;
+function SSL_use_certificate; external LIBSSL_DLL_NAME;
 procedure SSL_library_init; external LIBSSL_DLL_NAME;
 procedure EVP_cleanup; external LIBEAY_DLL_NAME;
 
