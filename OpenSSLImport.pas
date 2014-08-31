@@ -950,16 +950,22 @@ const
 
 type
   TSslVerifyCallback = function (N: Integer; X509StoreCtx: PX509_STORE_CTX): Integer; cdecl;
+  TSslInfoCallback = procedure (SSL: Pointer; Where: Integer; Ret: Integer); cdecl;
 
 function  SSLv23_method(): Pointer; cdecl;
 function  SSL_CTX_new(Method: Pointer): Pointer; cdecl;
 procedure SSL_CTX_free(SSL_CTX: Pointer); cdecl;
+function  SSL_CTX_load_verify_locations(SSL_CTX: Pointer; CF: PAnsiChar; CD: PAnsiChar): Integer; cdecl;
+procedure SSL_CTX_set_info_callback(SSL_CTX: Pointer; Callback: TSslInfoCallback); cdecl;
+
+
 function  SSL_connect(SSL: Pointer): Integer; cdecl;
 function  SSL_accept(SSL: Pointer): Integer; cdecl;
 procedure SSL_set_connect_state(SSL: Pointer); cdecl;
 procedure SSL_set_accept_state(SSL: Pointer); cdecl;
 function  SSL_read(SSL: Pointer; Buf: Pointer; Num: Integer): Integer; cdecl;
 function  SSL_write(SSL: Pointer; const Buf: Pointer; Num: Integer): Integer; cdecl;
+function  SSL_state(SSL: Pointer): Integer; cdecl;
 function  SSL_new(SSL_CTX: Pointer): Pointer; cdecl;
 procedure SSL_free(SSL: Pointer); cdecl;
 procedure SSL_set_bio(SSL: Pointer; InputBio, OutputBio: Pointer); cdecl;
@@ -1617,6 +1623,9 @@ function sk_value; external LIBEAY_DLL_NAME;
 function  SSLv23_method; external LIBSSL_DLL_NAME;
 function  SSL_CTX_new; external LIBSSL_DLL_NAME;
 procedure SSL_CTX_free; external LIBSSL_DLL_NAME;
+function  SSL_CTX_load_verify_locations; external LIBSSL_DLL_NAME;
+procedure SSL_CTX_set_info_callback; external LIBSSL_DLL_NAME;
+
 function  SSL_connect; external LIBSSL_DLL_NAME;
 function  SSL_accept; external LIBSSL_DLL_NAME;
 procedure SSL_set_connect_state; external LIBSSL_DLL_NAME;
