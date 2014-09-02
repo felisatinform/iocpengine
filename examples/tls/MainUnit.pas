@@ -75,8 +75,9 @@ begin
 
   // Locate certificates
   P := ExtractFilePath(Application.ExeName);
-  FTlsBox.LoadRootCert(P + 'amjay.pem');
-  FTlsBox.LoadClientCert(P + 'amjay.p12');
+  FTlsBox.LoadRootCert(P + 'server.crt');
+  //FTlsBox.LoadRootCert(P + 'amjay.pem');
+  //FTlsBox.LoadClientCert(P + 'amjay.p12', 'password');
   FTlsBox.Active := True;
 end;
 

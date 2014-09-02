@@ -957,6 +957,7 @@ function  SSL_CTX_new(Method: Pointer): Pointer; cdecl;
 procedure SSL_CTX_free(SSL_CTX: Pointer); cdecl;
 function  SSL_CTX_load_verify_locations(SSL_CTX: Pointer; CF: PAnsiChar; CD: PAnsiChar): Integer; cdecl;
 procedure SSL_CTX_set_info_callback(SSL_CTX: Pointer; Callback: TSslInfoCallback); cdecl;
+function  SSL_CTX_use_certificate(SSL_CTX: Pointer; X509: Pointer): Integer; cdecl;
 
 
 function  SSL_connect(SSL: Pointer): Integer; cdecl;
@@ -1625,6 +1626,7 @@ function  SSL_CTX_new; external LIBSSL_DLL_NAME;
 procedure SSL_CTX_free; external LIBSSL_DLL_NAME;
 function  SSL_CTX_load_verify_locations; external LIBSSL_DLL_NAME;
 procedure SSL_CTX_set_info_callback; external LIBSSL_DLL_NAME;
+function  SSL_CTX_use_certificate; external LIBSSL_DLL_NAME;
 
 function  SSL_connect; external LIBSSL_DLL_NAME;
 function  SSL_accept; external LIBSSL_DLL_NAME;
@@ -1632,6 +1634,7 @@ procedure SSL_set_connect_state; external LIBSSL_DLL_NAME;
 procedure SSL_set_accept_state; external LIBSSL_DLL_NAME;
 function  SSL_read; external LIBSSL_DLL_NAME;
 function  SSL_write; external LIBSSL_DLL_NAME;
+function  SSL_state; external LIBSSL_DLL_NAME;
 function  SSL_new; external LIBSSL_DLL_NAME;
 procedure SSL_free; external LIBSSL_DLL_NAME;
 procedure SSL_set_bio; external LIBSSL_DLL_NAME;

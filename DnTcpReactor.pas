@@ -17,11 +17,9 @@ uses
   Windows, SysUtils, Classes, Contnrs,
   DnRtl, DnConst, DnSimpleExecutor,
   DnAbstractExecutor, DnAbstractLogger,
-  DnTcpRequest, DnInterfaces, DnTcpChannel, DnTimerEngine, ComObj, ActiveX
-{$ifdef ENABLE_STREAMSEC}
-  , StreamSecII, TlsClass
-{$endif}
-  , WS2;
+  DnTcpRequest, DnInterfaces, DnTcpChannel, DnTimerEngine,
+  ComObj, ActiveX,
+  WS2;
 
 type
   TDnTcpReactor = class;
@@ -458,11 +456,11 @@ begin
   // bind to IOCP
   FGuard.Acquire;
   try
-    // check at first if such channel exists already
+    // Check at first if such channel exists already
     if CreateIOCompletionPort(Channel.SocketHandle, FPort, Cardinal(Pointer(Channel)), 1) = 0 then
       raise EDnWindowsException.Create(GetLastError());
 
-    // check at first if such channel object is already in
+    // Check at first if such channel object is already in
     ChannelIndex := FChannelList.IndexOf(Channel);
 
     if ChannelIndex = -1 then

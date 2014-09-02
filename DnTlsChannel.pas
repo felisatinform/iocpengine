@@ -142,7 +142,7 @@ begin
   else
   begin
     S := OpenSSLImport.SSL_state(FSSL);
-    FHandshakeCompleted := S = $03;
+    FHandshakeCompleted := (S and $03) <> 0;
     Result := FHandshakeCompleted;
   end;
 end;
