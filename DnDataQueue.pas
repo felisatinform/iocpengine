@@ -38,7 +38,7 @@ type
     function    ReadByte: Byte;
     function    ReadWord: Word;
     function    ReadAnsiChar: AnsiChar;
-    function    ReadBlock(BlockSize: Integer): AnsiString;
+    function    ReadBlock(BlockSize: Integer): RawByteString;
 
     procedure   EnsureCapacity(NewSize: Integer);
 
@@ -198,7 +198,7 @@ begin
   Extract(@Result, Sizeof(@Result));
 end;
 
-function TDnDataQueue.ReadBlock(BlockSize: Integer): AnsiString;
+function TDnDataQueue.ReadBlock(BlockSize: Integer): RawByteString;
 var Avail: Integer;
 begin
   if BlockSize > Size then

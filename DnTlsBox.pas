@@ -75,6 +75,7 @@ type
     procedure DoConnected(Channel: TDnTlsChannel);
 
     procedure HandleTransmitting(Channel: TDnTlsChannel);
+    procedure HandleTlsState(Channel: TDnTlsChannel);
 
     {$ifdef SSL_ACCEPT_ANY_CERTIFICATE}
     class function SslCertVerify(N: Integer; X509CertStore: pX509_STORE_CTX): Integer; cdecl;
@@ -236,33 +237,24 @@ begin
     Exit;
 
   TlsChannel := TDnTlsChannel(Channel);
-  Code := TlsChannel.HandleReceived(Buf, BufSize);
+  TlsChannel.HandleReceived(Buf, BufSize);
 
   // Check state of SSL session
   State := OpenSSLImport.SSL_state(TlsChannel.SSL);
   OutputDebugString(PWideChar(WideString(SslStateToString(State))));
 
-  if TlsChannel.Connected then
-  begin
-    DoConnected(TlsChannel);
-  end;
+  HandleTlsState(TlsChannel);
+  HandleTransmitting(TlsChannel);
 
   if TlsChannel.IncomingAppData.Size > 0 then
     DoDataAvailable(TlsChannel);
 
   // See final return code
-  case Code of
-  OpenSSLImport.SSL_ERROR_ZERO_RETURN: // Connection was closed
+  case TlsChannel.SslState of
+    SslFailed:  // Connection was closed
     begin
-      Close(TlsChannel);
-      DoClose(TlsChannel);
+      DoError(TlsChannel, TlsChannel.SslError);
     end;
-
-  OpenSSLImport.SSL_ERROR_WANT_READ: // More network data required to decode
-    ;// Do nothing here; reading will be resumed anyway;
-
-  OpenSSLImport.SSL_ERROR_WANT_WRITE: // Need to send smth - renegotiation can be in progress
-    HandleTransmitting(TlsChannel);
   end;
 
   if not TlsChannel.IsClosed and not TlsChannel.IsClosing then
@@ -531,6 +523,22 @@ begin
     Channel.Writing := False;
 end;
 
+type
+  THackTlsChannel = class(TDnTlsChannel)
+  end;
+procedure TDnTlsBox.HandleTlsState(Channel: TDnTlsChannel);
+begin
+  case Channel.SslState of
+    SslOk:     if not THackTlsChannel(Channel).ConnectedEventFired then
+               begin
+                 THackTlsChannel(Channel).ConnectedEventFired := True;
+                 DoConnected(Channel);
+               end;
+    SslFailed: DoError(Channel, -1);
+    SslClosed: begin Close(Channel); DoClose(Channel); end;
+  end;
+
+end;
 {$ifdef SSL_ACCEPT_ANY_CERTIFICATE}
 class function TDnTlsBox.SslCertVerify(N: Integer; X509CertStore: pX509_STORE_CTX): Integer; cdecl;
 begin
@@ -564,6 +572,13 @@ end;
 
 procedure TDnTlsBox.Close(Channel: TDnTlsChannel; Brutal: Boolean);
 begin
+  if not Brutal then
+  begin
+    Channel.SslClose();
+    HandleTransmitting(Channel);
+  end
+  else
+    FRequestor.Close(Channel, Nil, True);
 end;
 
 procedure TDnTlsBox.Pump(Channel: TDnTlsChannel);

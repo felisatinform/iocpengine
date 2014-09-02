@@ -28,7 +28,7 @@ object FrmMain: TFrmMain
     Width = 234
     Height = 24
     TabOrder = 0
-    Text = '37.139.30.183:5061'
+    Text = '37.139.30.183:443'
   end
   object BtConnect: TButton
     Left = 367
@@ -40,10 +40,16 @@ object FrmMain: TFrmMain
     OnClick = BtConnectClick
   end
   object MmLog: TMemo
-    Left = 8
-    Top = 44
-    Width = 457
-    Height = 379
+    Left = 0
+    Top = 40
+    Width = 472
+    Height = 391
+    Align = alBottom
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    ScrollBars = ssBoth
     TabOrder = 2
+    ExplicitLeft = 8
+    ExplicitTop = 49
+    ExplicitWidth = 473
   end
 end

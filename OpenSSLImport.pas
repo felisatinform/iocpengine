@@ -996,6 +996,7 @@ function  SSL_get_error(SSL: Pointer; Code: Integer): Integer; cdecl;
 procedure SSL_load_error_strings; cdecl;
 procedure SSL_set_verify(SSL: Pointer; Mode: Integer; Callback: TSslVerifyCallback); cdecl;
 function  SSL_use_certificate(SSL: Pointer; X509: Pointer): Integer; cdecl;
+function  SSL_shutdown(SSL: Pointer): Integer; cdecl;
 
 // BIO functions
 function BIO_new(_type: PBIO_METHOD): PBIO; cdecl;
@@ -1661,6 +1662,7 @@ function  SSL_new; external LIBSSL_DLL_NAME;
 procedure SSL_free; external LIBSSL_DLL_NAME;
 procedure SSL_set_bio; external LIBSSL_DLL_NAME;
 function  SSL_get_error; external LIBSSL_DLL_NAME;
+function  SSL_shutdown; external LIBSSL_DLL_NAME;
 
 function BIO_new; external LIBEAY_DLL_NAME;
 function BIO_new_file; external LIBEAY_DLL_NAME;

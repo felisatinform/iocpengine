@@ -98,8 +98,12 @@ begin
 end;
 
 procedure TFrmMain.TlsDataAvailable(Sender: TObject; Channel: TDnTlsChannel);
+var Content: RawByteString;
 begin
   Log('TLS data available');
+  Content := Channel.IncomingAppData.ReadBlock(Channel.IncomingAppData.Size);
+  Log(Content);
+  FTlsBox.Close(Channel);
 end;
 
 procedure TFrmMain.TlsWritten(Sender: TObject; Channel: TDnTlsChannel; Written: Integer);
@@ -121,6 +125,7 @@ end;
 procedure TFrmMain.TlsConnected(Sender: TObject; Channel: TDnTlsChannel);
 begin
   Log('TLS connected');
+  FTlsBox.Write(Channel, 'GET /index.html HTTP/1.1' + #13#10 + 'Host: voipobjects.com' + #13#10#13#10);
 end;
 
 end.
