@@ -970,9 +970,13 @@ const
   SSL_VERIFY_FAIL_IF_NO_PEER_CERT	= $2;
   SSL_VERIFY_CLIENT_ONCE = $4;
 
+  SSL_FILETYPE_PEM =  1;
+  SSL_FILETYPE_ASN1 = 2;
+
 type
   TSslVerifyCallback = function (N: Integer; X509StoreCtx: PX509_STORE_CTX): Integer; cdecl;
   TSslInfoCallback = procedure (SSL: Pointer; Where: Integer; Ret: Integer); cdecl;
+  TSslPasswordCallback = function (Buffer: PAnsiChar; Size: Integer; RWFlag: Integer; UserData: Pointer): Integer; cdecl;
 
 function  SSLv23_method(): Pointer; cdecl;
 function  SSL_CTX_new(Method: Pointer): Pointer; cdecl;
@@ -980,6 +984,10 @@ procedure SSL_CTX_free(SSL_CTX: Pointer); cdecl;
 function  SSL_CTX_load_verify_locations(SSL_CTX: Pointer; CF: PAnsiChar; CD: PAnsiChar): Integer; cdecl;
 procedure SSL_CTX_set_info_callback(SSL_CTX: Pointer; Callback: TSslInfoCallback); cdecl;
 function  SSL_CTX_use_certificate(SSL_CTX: Pointer; X509: Pointer): Integer; cdecl;
+function  SSL_CTX_use_PrivateKey_file(SSL_CTX: Pointer; Filename: PAnsiChar; Filetype: Integer): Integer; cdecl;
+function  SSL_CTX_use_certificate_file(SSL_CTX: Pointer; Filename: PAnsiChar; Filetype: Integer): Integer; cdecl;
+procedure SSL_CTX_set_default_passwd_cb(SSL_CTX: Pointer; Callback: TSslPasswordCallback); cdecl;
+procedure SSL_CTX_set_default_passwd_cb_userdata(SSL_CTX: Pointer; UserData: Pointer); cdecl;
 
 
 function  SSL_connect(SSL: Pointer): Integer; cdecl;
@@ -1650,6 +1658,10 @@ procedure SSL_CTX_free; external LIBSSL_DLL_NAME;
 function  SSL_CTX_load_verify_locations; external LIBSSL_DLL_NAME;
 procedure SSL_CTX_set_info_callback; external LIBSSL_DLL_NAME;
 function  SSL_CTX_use_certificate; external LIBSSL_DLL_NAME;
+function  SSL_CTX_use_PrivateKey_file; external LIBSSL_DLL_NAME;
+function  SSL_CTX_use_certificate_file; external LIBSSL_DLL_NAME;
+procedure SSL_CTX_set_default_passwd_cb; external LIBSSL_DLL_NAME;
+procedure SSL_CTX_set_default_passwd_cb_userdata; external LIBSSL_DLL_NAME;
 
 function  SSL_connect; external LIBSSL_DLL_NAME;
 function  SSL_accept; external LIBSSL_DLL_NAME;

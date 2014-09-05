@@ -28,7 +28,7 @@ object FrmMain: TFrmMain
     Width = 234
     Height = 24
     TabOrder = 0
-    Text = '37.139.30.183:443'
+    Text = '10.255.13.101:38332'
   end
   object BtConnect: TButton
     Left = 367
@@ -48,8 +48,5 @@ object FrmMain: TFrmMain
     Anchors = [akLeft, akTop, akRight, akBottom]
     ScrollBars = ssBoth
     TabOrder = 2
-    ExplicitLeft = 8
-    ExplicitTop = 49
-    ExplicitWidth = 473
   end
 end

@@ -79,7 +79,7 @@ begin
   FFileHandle := Windows.CreateFile(PChar(FFileName), GENERIC_READ, FILE_SHARE_READ,
     Nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, 0);
   if FFileHandle = INVALID_HANDLE_VALUE then
-    raise EDnException.Create(ErrWin32Error, GetLastError(), 'CreateFile');
+    raise EDnException.Create(ErrWin32, GetLastError(), 'CreateFile');
   SetFilePointer(FFileHandle, FStartPos, Nil, FILE_BEGIN);
 
   FWSABuf.Len := 0;
@@ -94,7 +94,7 @@ begin
   FEOR := False;
   FTotalWritten := 0;
   if ReadBlock = False then
-    raise EDnException.Create(ErrWin32Error, GetLastError(), 'ReadFile');
+    raise EDnException.Create(ErrWin32, GetLastError(), 'ReadFile');
 end;
 
 

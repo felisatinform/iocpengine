@@ -5,7 +5,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, SyncObjs,
-  DnTlsBox, DnTlsChannel, DnRtl;
+  DnTlsBox, DnTlsChannel, DnRtl,
+  pbKroll.Common.KxProto.MessagesMessages;
 
 type
   TFrmMain = class(TForm)
@@ -40,7 +41,24 @@ implementation
 
 procedure TFrmMain.BtConnectClick(Sender: TObject);
 var Ip: String; Port, P: Integer;
+    PingRequest: TPingRequestRecord;
+    Buffer: RawByteString;
+    Encoded: Integer;
+    Dump: TFileStream;
 begin
+  // Test encoding
+  PingRequestRecordInit(PingRequest);
+  PingRequest.Value := 'Test';
+  PingRequest.ValueBytes := #1#2#3;
+  SetLength(Buffer, 1024);
+  Encoded := pbEncodeValuePingRequestRecord(Buffer[1], Length(Buffer), PingRequest);
+  SetLength(Buffer, Encoded);
+  PingRequestRecordFinalise(PingRequest);
+  Dump := TFileStream.Create('ProtoDump.bin', fmCreate + fmOpenWrite);
+  Dump.WriteBuffer(Buffer[1], Length(Buffer));
+  Dump.Free;
+  //FTlsBox.Write(Channel, 'GET /index.html HTTP/1.1' + #13#10 + 'Host: voipobjects.com' + #13#10#13#10);
+
   P := Pos(':', Self.EdHostIp.Text);
   if P = 0 then
   begin
@@ -75,9 +93,10 @@ begin
 
   // Locate certificates
   P := ExtractFilePath(Application.ExeName);
-  FTlsBox.LoadRootCert(P + 'server.crt');
-  //FTlsBox.LoadRootCert(P + 'amjay.pem');
-  //FTlsBox.LoadClientCert(P + 'amjay.p12', 'password');
+  //FTlsBox.LoadRootCert(P + 'server.crt');
+  //Self.EdHostIp.Text := '37.139.30.183:443';
+  FTlsBox.LoadRootCert(P + 'amjay.pem');
+  FTlsBox.LoadClientCert(P + 'privatekey.pem', P + 'publicCert.pem', 'password');
   FTlsBox.Active := True;
 end;
 
@@ -123,9 +142,20 @@ begin
 end;
 
 procedure TFrmMain.TlsConnected(Sender: TObject; Channel: TDnTlsChannel);
+var PingRequest: TPingRequestRecord;
+    Buffer: RawByteString;
+    Encoded: Integer;
 begin
   Log('TLS connected');
-  FTlsBox.Write(Channel, 'GET /index.html HTTP/1.1' + #13#10 + 'Host: voipobjects.com' + #13#10#13#10);
+
+  PingRequestRecordInit(PingRequest);
+  SetLength(Buffer, 1024);
+  Encoded := pbEncodeValuePingRequestRecord(Buffer[1], Length(Buffer), PingRequest);
+  SetLength(Buffer, Encoded);
+  FTlsBox.Write(Channel, Buffer);
+  PingRequestRecordFinalise(PingRequest);
+
+  //FTlsBox.Write(Channel, 'GET /index.html HTTP/1.1' + #13#10 + 'Host: voipobjects.com' + #13#10#13#10);
 end;
 
 end.

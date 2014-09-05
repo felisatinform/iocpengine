@@ -1,8 +1,9 @@
+{$I DnConfig.inc}
 unit DnTlsChannel;
 interface
 uses
   Classes, SysUtils, AnsiStrings,
-  DnConst, DnRtl, DnTcpChannel, DnDataQueue, DnTcpReactor,
+  DnConst, DnRtl, DnTcpChannel, DnDataQueue, DnTcpReactor, DnUtils,
   OpenSSLImport, OpenSSLUtils, WS2, Windows;
 
 const
@@ -40,11 +41,17 @@ type
     // Writing now
     FWriting: Boolean;
 
+    // Current SSL channel state
     FSslState: TSslState;
+
+    // Last SSL error
     FSslError: Integer;
+
+    // Marks if OnConnected() event was sent for this channel
     FConnectedEventFired: Boolean;
 
     procedure InitSsl(SslCtx: Pointer);
+    procedure FreeSsl();
     procedure HandleStateChain();
     procedure HandleReceivedSsl();
     procedure HandleHandshake();
@@ -116,7 +123,7 @@ begin
   SetLength(Buf, 512);
   OpenSSLImport.ERR_error_string(ErrorCode, @Buf[1]);
   SetLength(Buf, AnsiStrings.StrLen(@Buf[1]));
-  FErrorMessage := Buf;
+  FErrorMessage := String(Buf);
 end;
 
 constructor TDnTlsChannel.CreateClient(Reactor: TDnTcpReactor; const RemoteIp: AnsiString; RemotePort: Integer; SslCtx: Pointer);
@@ -152,6 +159,24 @@ begin
   FInputBio := OpenSSLImport.BIO_new(OpenSSLImport.BIO_s_mem);
   FOutputBio := OpenSSLImport.BIO_new(OpenSSLImport.BIO_s_mem);
   OpenSSLImport.SSL_set_bio(FSSL, FInputBio, FOutputBio);
+end;
+
+procedure TDnTlsChannel.FreeSsl;
+begin
+  // FInputBio and FOutputBio are linked into FSSL context - it owns buffers so no delete them
+  FInputBio := Nil;
+  FOutputBio := Nil;
+
+  if Assigned(FSSL) then
+  begin
+    OpenSSLImport.SSL_free(FSSL);
+    FSSL := Nil;
+  end;
+
+  FreeAndNil(FOutgoing);
+  FreeAndNil(FIncoming);
+  FreeAndNil(FIncomingAppData);
+  FreeAndNil(FOutgoingAppData);
 end;
 
 procedure TDnTlsChannel.HandleStateChain();
@@ -255,22 +280,8 @@ end;
 
 destructor TDnTlsChannel.Destroy;
 begin
-  // FInputBio and FOutputBio are linked into FSSL context - it owns buffers so no delete them
-  FInputBio := Nil;
-  FOutputBio := Nil;
-
-  if Assigned(FSSL) then
-  begin
-    OpenSSLImport.SSL_free(FSSL);
-    FSSL := Nil;
-  end;
-
-  FreeAndNil(FOutgoing);
-  FreeAndNil(FIncoming);
-  FreeAndNil(FIncomingAppData);
-  FreeAndNil(FOutgoingAppData);
-
-  inherited Destroy;
+  FreeSsl();
+  inherited Destroy();
 end;
 
 procedure TDnTlsChannel.ConnectedAsClient;
@@ -347,7 +358,9 @@ begin
 
     // Increment size of buffer
     if ResCode > 0 then
+    begin
       FOutgoing.Size := FOutgoing.Size + ResCode;
+    end;
   until ResCode <= 0;
 end;
 

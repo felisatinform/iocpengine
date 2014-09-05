@@ -48,7 +48,9 @@ type
     FTimeout:                   Integer; // I/O timeout in seconds
     FListenerPort:              Integer; // Listener port number. Zero means no listening.
     FActive:                    Boolean; // Marks if box is operating now
-    FClientCert:                TX509Certificate;
+    FClientPrivateKeyFilename:  String;
+    FClientPublicKeyFilename:   String;
+    FClientPassword:            RawByteString;
     FRootCertificatePath:       String;
     FSslCtx:                    Pointer;
 
@@ -91,7 +93,7 @@ type
     procedure     Open;
     procedure     Close; overload;
     procedure     LoadRootCert(const FileName: String);
-    procedure     LoadClientCert(const FileName: String; const Password: RawByteString);
+    procedure     LoadClientCert(const PrivateKeyFileName, PublicKeyFileName: String; const Password: RawByteString);
     function      MakeChannel(const RemoteIp: AnsiString; Port: Integer): TDnTlsChannel;
     procedure     Connect(Channel: TDnTlsChannel; const IP: AnsiString; RemotePort: Integer);
     procedure     Pump(Channel: TDnTlsChannel);
@@ -357,8 +359,22 @@ begin
   FreeAndNil(FLogger);
   FreeAndNil(FExecutor);
 
-  FreeAndNil(FClientCert);
   inherited Destroy;
+end;
+
+function SslPasswordCallback(Buffer: PAnsiChar; Size: Integer; RWFlag: Integer; Userdata: TDnTlsBox): Integer; cdecl;
+var TlsBox: TDnTlsBox;
+begin
+  TlsBox := Userdata;
+
+  if Length(TlsBox.FClientPassword) > 0 then
+  begin
+    Move(TlsBox.FClientPassword[1], Buffer^, Length(TlsBox.FClientPassword));
+    Buffer[Length(TlsBox.FClientPassword)] := #0;
+    Result := Length(TlsBox.FClientPassword);
+  end
+  else
+    Result := 0;
 end;
 
 procedure TDnTlsBox.Open;
@@ -381,10 +397,21 @@ begin
       raise EDnSslException.Create(OpenSSLImport.ERR_get_error());
   end;
 
+  // Set password callback
+  OpenSSLImport.SSL_CTX_set_default_passwd_cb(FSslCtx, @SslPasswordCallback);
+  OpenSSLImport.SSL_CTX_set_default_passwd_cb_userdata(FSslCtx, TObject(Self));
+
   // Set client certificate
-  if Assigned(FClientCert) then
+  if FileExists(FClientPrivateKeyFilename) then
   begin
-    ResCode := OpenSSLImport.SSL_CTX_use_certificate(FSslCtx, FClientCert.X509);
+    ResCode := OpenSSLImport.SSL_CTX_use_privatekey_file(FSslCtx, PAnsiChar(AnsiString(FClientPrivateKeyFilename)), SSL_FILETYPE_PEM);
+    if ResCode <> 1 then
+      raise EDnSslException.Create(OpenSSLImport.ERR_get_error());
+  end;
+
+  if FileExists(FClientPublicKeyFilename) then
+  begin
+    ResCode := OpenSSLImport.SSL_CTX_use_certificate_file(FSslCtx, PAnsiChar(AnsiString(FClientPublicKeyFilename)), SSL_FILETYPE_PEM);
     if ResCode <> 1 then
       raise EDnSslException.Create(OpenSSLImport.ERR_get_error());
   end;
@@ -438,15 +465,11 @@ begin
   FRootCertificatePath := Filename;
 end;
 
-procedure TDnTlsBox.LoadClientCert(const FileName: String; const Password: RawByteString);
+procedure TDnTlsBox.LoadClientCert(const PrivateKeyFilename, PublicKeyFilename: String; const Password: RawByteString);
 begin
-  FreeAndNil(FClientCert);
-  try
-    FClientCert := TX509Certificate.Create();
-    FClientCert.LoadFromFile(Filename, OpenSSLUtils.PKCS12, PAnsiChar(@Password[1]));
-  finally
-    FreeAndNil(FClientCert);
-  end;
+  FClientPrivateKeyFilename := PrivateKeyFilename;
+  FClientPublicKeyFilename := PublicKeyFilename;
+  FClientPassword := Password;
 end;
 
 function TDnTlsBox.GetActive: Boolean;
@@ -553,6 +576,7 @@ begin
   Msg := 'Where: ' + IntToStr(Where) + ' ' + SslWhereToString(Where) + ' ret: ' + IntToStr(Ret);
   OutputDebugString(PWideChar(Msg));
 end;
+
 
 function TDnTlsBox.MakeChannel(const RemoteIp: AnsiString; Port: Integer): TDnTlsChannel;
 var ResCode: Integer;
