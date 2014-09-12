@@ -14,3 +14,7 @@
 {$DEFINE USE_OPENSSL}
 //{$DEFINE SSL_ACCEPT_ANY_CERTIFICATE}
 
+{$if CompilerVersion >= 20.0}
+{$define Delphi2009AndUp}
+{$ifend}
+

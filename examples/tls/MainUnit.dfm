@@ -1,8 +1,9 @@
 object FrmMain: TFrmMain
   Left = 0
   Top = 0
+  BorderStyle = bsSingle
   Caption = 'TLS demo'
-  ClientHeight = 431
+  ClientHeight = 437
   ClientWidth = 472
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,37 +17,61 @@ object FrmMain: TFrmMain
   PixelsPerInch = 120
   TextHeight = 16
   object Label1: TLabel
-    Left = 8
-    Top = 16
-    Width = 45
+    Left = 7
+    Top = 42
+    Width = 99
     Height = 16
-    Caption = 'Host IP:'
+    Caption = 'TLS client target:'
+  end
+  object Label2: TLabel
+    Left = 8
+    Top = 8
+    Width = 142
+    Height = 16
+    Caption = 'TLS server port number:'
   end
   object EdHostIp: TEdit
-    Left = 127
-    Top = 13
-    Width = 234
+    Left = 156
+    Top = 39
+    Width = 173
     Height = 24
     TabOrder = 0
-    Text = '10.255.13.101:38332'
+    Text = '192.168.12.134:10273'
   end
-  object BtConnect: TButton
-    Left = 367
-    Top = 13
-    Width = 98
+  object BtStartClient: TButton
+    Left = 335
+    Top = 39
+    Width = 129
     Height = 25
-    Caption = 'Connect'
+    Caption = 'Start client'
     TabOrder = 1
-    OnClick = BtConnectClick
+    OnClick = BtStartClientClick
   end
   object MmLog: TMemo
     Left = 0
-    Top = 40
+    Top = 70
     Width = 472
-    Height = 391
+    Height = 367
     Align = alBottom
     Anchors = [akLeft, akTop, akRight, akBottom]
     ScrollBars = ssBoth
     TabOrder = 2
+  end
+  object EdServerPortNumber: TEdit
+    Left = 156
+    Top = 8
+    Width = 173
+    Height = 24
+    TabOrder = 3
+    Text = '10273'
+  end
+  object BtStartServer: TButton
+    Left = 335
+    Top = 8
+    Width = 129
+    Height = 25
+    Caption = 'Start server'
+    TabOrder = 4
+    OnClick = BtStartServerClick
   end
 end

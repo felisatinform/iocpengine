@@ -23,7 +23,6 @@ uses
 
 type
   TDnTlsDataAvailable = procedure (Sender: TObject; Channel: TDnTlsChannel) of object;
-  TDnTlsDataWritten = procedure (Sender: TObject; Channel: TDnTlsChannel; Length: Integer) of object;
   TDnTlsError = procedure (Sender: TObject; Channel: TDnTlsChannel; ErrorCode: Integer) of object;
   TDnTlsClosed = procedure (Sender: TObject; Channel: TDnTlsChannel) of object;
   TDnTlsConnected = procedure (Sender: TObject; Channel: TDnTlsChannel) of object;
@@ -31,7 +30,6 @@ type
   TDnTlsBox = class(TComponent)
   protected
     FTlsDataAvailable:          TDnTlsDataAvailable;
-    FTlsDataWritten:            TDnTlsDataWritten;
     FTlsError:                  TDnTlsError;
     FTlsClosed:                 TDnTlsClosed;
     FTlsConnected:              TDnTlsConnected;
@@ -93,16 +91,15 @@ type
     procedure     Open;
     procedure     Close; overload;
     procedure     LoadRootCert(const FileName: String);
-    procedure     LoadClientCert(const PrivateKeyFileName, PublicKeyFileName: String; const Password: RawByteString);
+    procedure     LoadCert(const PrivateKeyFileName, PublicKeyFileName: String; const Password: RawByteString);
     function      MakeChannel(const RemoteIp: AnsiString; Port: Integer): TDnTlsChannel;
-    procedure     Connect(Channel: TDnTlsChannel; const IP: AnsiString; RemotePort: Integer);
+    procedure     Connect(Channel: TDnTlsChannel);
     procedure     Pump(Channel: TDnTlsChannel);
     procedure     Write(Channel: TDnTlsChannel; const Buf: RawByteString);
     procedure     Close(Channel: TDnTlsChannel; Brutal: Boolean = False); overload;
 
   published
     property      OnData:          TDnTlsDataAvailable      read FTlsDataAvailable        write FTlsDataAvailable;
-    property      OnWritten:       TDnTlsDataWritten        read FTlsDataWritten          write FTlsDataWritten;
     property      OnClose:         TDnTlsClosed             read FTlsClosed               write FTlsClosed;
     property      OnError:         TDnTlsError              read FTlsError                write FTlsError;
     property      OnConnected:     TDnTlsConnected          read FTlsConnected            write FTlsConnected;
@@ -173,7 +170,6 @@ begin
   inherited Create(AOwner);
 
   FTlsDataAvailable := Nil;
-  FTlsDataWritten := Nil;
   FTlsError := Nil;
   FTlsClosed := Nil;
   FTlsConnected := Nil;
@@ -185,8 +181,7 @@ begin
   FReactor := TDnTcpReactor.Create(Nil);
   FConnecter := TDnTcpConnecter.Create(Nil);
   FRequestor := TDnTcpRequestor.Create(Nil);
-  if FListenerPort <> 0 then
-    FListener := TDnTcpListener.Create(Nil);
+  FListener := TDnTcpListener.Create(Nil);
 
   (FLogger as TDnFileLogger).FileName := 'TlsBox.log';
   FLogger.MinLevel := llCritical;
@@ -199,6 +194,7 @@ begin
     FListener.Executor := FExecutor;
     FListener.Reactor := FReactor;
     FListener.OnIncoming := TcpListenerIncoming;
+    FListener.OnCreateChannel := TcpListenerChannel;
   end;
 
   FRequestor.Logger := FLogger;
@@ -228,6 +224,12 @@ begin
 
   TlsChannel := TDnTlsChannel(Channel);
   TlsChannel.ConnectedAsServer();
+
+  // Start reading
+  FRequestor.RawRead(TlsChannel, Nil, TlsChannel.IncomingData.Memory, TlsChannel.IncomingData.Capacity);
+
+  // Ensure everything is written
+  HandleTransmitting(TlsChannel);
 end;
 
 procedure TDnTlsBox.TcpRequestorTcpRead(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer;
@@ -243,7 +245,7 @@ begin
 
   // Check state of SSL session
   State := OpenSSLImport.SSL_state(TlsChannel.SSL);
-  OutputDebugString(PWideChar(WideString(SslStateToString(State))));
+  //OutputDebugString(PWideChar(WideString(SslStateToString(State))));
 
   HandleTlsState(TlsChannel);
   HandleTransmitting(TlsChannel);
@@ -329,11 +331,6 @@ begin
   // Start reading
   FRequestor.RawRead(TlsChannel, Nil, TlsChannel.IncomingData.Memory, TlsChannel.IncomingData.Capacity);
 
-  //Pump(TlsChannel);
-
-  // Start reading
-  //FRequestor.Read(Channel, Nil, TlsChannel.IncomingData.Memory, TlsChannel.IncomingData.Capacity);
-
   // Ensure everything is written
   HandleTransmitting(TlsChannel);
 end;
@@ -381,6 +378,7 @@ procedure TDnTlsBox.Open;
 var ResCode: Integer;
 begin
   FActive := True;
+  FShutdown := False;
 
   FSslCtx := OpenSSLImport.SSL_CTX_new(OpenSSLImport.SSLv23_method());
   if not Assigned(FSslCtx) then
@@ -443,6 +441,7 @@ begin
   end;
 
   FConnecter.Active := False;
+
   // Stop requestor - new requests will be ignored or exceptions raised
   FRequestor.Active := False;
 
@@ -465,7 +464,7 @@ begin
   FRootCertificatePath := Filename;
 end;
 
-procedure TDnTlsBox.LoadClientCert(const PrivateKeyFilename, PublicKeyFilename: String; const Password: RawByteString);
+procedure TDnTlsBox.LoadCert(const PrivateKeyFilename, PublicKeyFilename: String; const Password: RawByteString);
 begin
   FClientPrivateKeyFilename := PrivateKeyFilename;
   FClientPublicKeyFilename := PublicKeyFilename;
@@ -544,11 +543,18 @@ begin
   end
   else
     Channel.Writing := False;
+
+  // If shutdowning now
+  if Channel.SslState = SslShutdown then
+  begin
+    FRequestor.Close(Channel, Nil);
+  end;
 end;
 
 type
   THackTlsChannel = class(TDnTlsChannel)
   end;
+
 procedure TDnTlsBox.HandleTlsState(Channel: TDnTlsChannel);
 begin
   case Channel.SslState of
@@ -558,10 +564,10 @@ begin
                  DoConnected(Channel);
                end;
     SslFailed: DoError(Channel, -1);
-    SslClosed: begin Close(Channel); DoClose(Channel); end;
+    SslClosed: begin Close(Channel); (*DoClose(Channel);*) end;
   end;
-
 end;
+
 {$ifdef SSL_ACCEPT_ANY_CERTIFICATE}
 class function TDnTlsBox.SslCertVerify(N: Integer; X509CertStore: pX509_STORE_CTX): Integer; cdecl;
 begin
@@ -574,7 +580,7 @@ class procedure TDnTlsBox.SslInfoNotify(SSL: Pointer; Where: Integer; Ret: Integ
 var Msg: WideString;
 begin
   Msg := 'Where: ' + IntToStr(Where) + ' ' + SslWhereToString(Where) + ' ret: ' + IntToStr(Ret);
-  OutputDebugString(PWideChar(Msg));
+  //OutputDebugString(PWideChar(Msg));
 end;
 
 
@@ -588,7 +594,7 @@ begin
   {$endif}
 end;
 
-procedure TDnTlsBox.Connect(Channel: TDnTlsChannel; const IP: AnsiString; RemotePort: Integer);
+procedure TDnTlsBox.Connect(Channel: TDnTlsChannel);
 begin
   // Open TCP connection at first
   FConnecter.Connect(Channel, Nil, Self.FTimeout);

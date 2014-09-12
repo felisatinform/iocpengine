@@ -262,7 +262,6 @@ begin
   FExecutor := Nil;
   FGuard := TDnMutex.Create;
   FRequestActive := TDnSemaphore.Create(1, 1);
-  FTurningOffSignal := Windows.CreateEvent(Nil, True, False, Nil);
 end;
 
 destructor TDnTcpListener.Destroy;
@@ -270,12 +269,8 @@ begin
   if Active then
     Active := False;
 
-  // Wait while acceptex query will finish
-  Windows.WaitForSingleObject(FTurningOffSignal, INFINITE);
-
   FreeAndNil(FRequest);
   FreeAndNil(FRequestActive);
-  Windows.CloseHandle(FTurningOffSignal);
   FreeAndNil(FGuard);
 
   inherited Destroy;
@@ -342,6 +337,7 @@ end;
 function TDnTcpListener.TurnOn: Boolean;
 var TempBool: LongBool;
 begin
+  FTurningOffSignal := Windows.CreateEvent(Nil, True, False, Nil);
   FActive := True;
 
   // Create listening socket
@@ -443,6 +439,13 @@ begin
     WS2.Shutdown(Sock, SD_BOTH); //yes, I known that SD_BOTH is bad idea... But this is LISTENING socket :)
     WS2.CloseSocket(Sock);
   end;
+  // Wait while acceptex query will finish
+  Unlock();
+  Windows.WaitForSingleObject(FTurningOffSignal, INFINITE);
+  Lock();
+  Windows.CloseHandle(FTurningOffSignal);
+  FTurningOffSignal := 0;
+
   Result := False;
 end;
 

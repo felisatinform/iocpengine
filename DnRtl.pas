@@ -171,6 +171,7 @@ function  IsIPAddress(const S: AnsiString): Boolean;
 function  PosExAnsi(SubStr, Str: AnsiString; StartOffset: Integer): Integer;
 function  TrimAnsi(Str: AnsiString): AnsiString;
 function  PosAnsi(SubStr, Str: AnsiString): Integer;
+function  CardinalTo4BytesString(V: Cardinal): RawByteString;
 
 var PendingRequests: Integer;
 
@@ -259,7 +260,11 @@ end;
 function GetErrorText(ErrorCode: Integer): string;
 var
   dwSize: DWORD;
+  {$IFDEF Unicode}
   lpszTemp: PWideChar;
+  {$ELSE}
+  lpszTemp: PChar;
+  {$ENDIF}
 begin
   dwSize := 1024;
   lpszTemp := nil;
@@ -616,6 +621,13 @@ begin
   else
     Result := -1;
 end;
+
+function  CardinalTo4BytesString(V: Cardinal): RawByteString;
+begin
+  SetLength(Result, 4);
+  Move(V, Result[1], 4);
+end;
+
 initialization
   CurrentThread := Nil;
   LaunchTime := Now;

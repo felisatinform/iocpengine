@@ -2,7 +2,7 @@
 unit DnTlsChannel;
 interface
 uses
-  Classes, SysUtils, AnsiStrings,
+  Classes, SysUtils, 
   DnConst, DnRtl, DnTcpChannel, DnDataQueue, DnTcpReactor, DnUtils,
   OpenSSLImport, OpenSSLUtils, WS2, Windows;
 
@@ -20,6 +20,9 @@ type
 
   TDnTlsChannel = class(TDnTcpChannel)
   protected
+    // Markj channel as client/server
+    FTlsClient: Boolean;
+
     // OpenSSL's BIO buffers
     FInputBio, FOutputBio: PBIO;
 
@@ -122,21 +125,21 @@ begin
 
   SetLength(Buf, 512);
   OpenSSLImport.ERR_error_string(ErrorCode, @Buf[1]);
-  SetLength(Buf, AnsiStrings.StrLen(@Buf[1]));
+  SetLength(Buf, StrLen(PAnsiChar(@Buf[1])));
   FErrorMessage := String(Buf);
 end;
 
 constructor TDnTlsChannel.CreateClient(Reactor: TDnTcpReactor; const RemoteIp: AnsiString; RemotePort: Integer; SslCtx: Pointer);
 begin
   inherited CreateEmpty(Reactor, RemoteIp, RemotePort);
-
+  FTlsClient := True;
   InitSsl(SslCtx);
 end;
 
 constructor TDnTlsChannel.CreateServer(Reactor: TDnTcpReactor; Socket: TSocket; Addr: TSockAddrIn; SslCtx: Pointer);
 begin
   inherited Create(Reactor, Socket, Addr);
-
+  FTlsClient := False;
   InitSsl(SslCtx);
 end;
 
@@ -201,8 +204,13 @@ begin
     FIncomingAppData.EnsureCapacity(FIncomingAppData.Size + TlsDecodedBufferSize);
 
     // Decode data
+    {$IFDEF Delphi2009AndUp}
     ResCode := OpenSSLImport.SSL_read(FSSL, FIncomingAppData.Memory + FIncomingAppData.Size, TlsDecodedBufferSize);
-    OutputDebugString(PWideChar(WideString('SSL_read returned ' + IntToStr(ResCode))));
+    {$ELSE}
+    ResCode := OpenSSLImport.SSL_read(FSSL, PChar(FIncomingAppData.Memory) + FIncomingAppData.Size, TlsDecodedBufferSize);
+    {$ENDIF}
+
+    //OutputDebugString(PWideChar(WideString('SSL_read returned ' + IntToStr(ResCode))));
     if ResCode > 0 then
       FIncomingAppData.Size := FIncomingAppData.Size + ResCode;
 
@@ -228,7 +236,11 @@ procedure TDnTlsChannel.HandleHandshake();
 var ResCode: Integer;
 begin
   // Try to perform handshake
-  ResCode := OpenSSLImport.SSL_connect(FSSL);
+  if FTlsClient then
+    ResCode := OpenSSLImport.SSL_connect(FSSL)
+  else
+    ResCode := OpenSSLImport.SSL_accept(FSSL);
+
   case ResCode of
     -1: begin
           // See what is exact error code
@@ -288,13 +300,15 @@ procedure TDnTlsChannel.ConnectedAsClient;
 var ResCode: Integer;
 begin
   FSslState := SslHandshake;
+  FTlsClient := True;
   HandleStateChain();
 end;
 
 procedure TDnTlsChannel.ConnectedAsServer;
 var ResCode: Integer;
 begin
-  ResCode := OpenSSLImport.SSL_accept(FSSL);
+  FSslState := SslHandshake;
+  FTlsClient := False;
   HandleStateChain();
 end;
 
@@ -311,7 +325,7 @@ procedure TDnTlsChannel.HandleReceived(Buffer: PByte; Size: Integer);
 var
     ResCode: Integer;
 begin
-  OutputDebugString(PWideChar(WideString('Read ' + IntToStr(Size) + ' bytes.')));
+  //OutputDebugString(PWideChar(WideString('Read ' + IntToStr(Size) + ' bytes.')));
 
   // Send received data to OpenSSL associated buffer
   if OpenSSLImport.BIO_write(FInputBio, Buffer, Size) < 1 then
@@ -322,7 +336,7 @@ begin
   end;
 
   HandleStateChain();
-  OutputDebugString(PWideChar(WideString('State: ' + IntToStr(Integer(FSslState)))));
+  //OutputDebugString(PWideChar(WideString('State: ' + IntToStr(Integer(FSslState)))));
 end;
 
 procedure TDnTlsChannel.CheckDataToSend;
@@ -354,8 +368,11 @@ begin
     FOutgoing.EnsureCapacity(FOutgoing.Size + TlsIncomingBufferSize);
 
     // Copy to buffer
+    {$IFDEF Delphi2009AndUp}
     ResCode := OpenSSLImport.BIO_read(FOutputBio, FOutgoing.Memory + FOutgoing.Size, TlsIncomingBufferSize);
-
+    {$ELSE}
+    ResCode := OpenSSLImport.BIO_read(FOutputBio, PChar(FOutgoing.Memory) + FOutgoing.Size, TlsIncomingBufferSize);
+    {$ENDIF}
     // Increment size of buffer
     if ResCode > 0 then
     begin
