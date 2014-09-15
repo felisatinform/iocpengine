@@ -44,7 +44,7 @@ type
     function GetTempBufferPtr: PByte;
     function GetTempBufferSize: Integer;
 
-    function GetBufferPtr: PAnsiChar;
+    function GetBufferPtr: PByte;
     function GetBufferUsed: Cardinal;
     function GetBufferFree: Cardinal;
 
@@ -55,7 +55,7 @@ type
     constructor   Create(Reactor: TObject; Sock: TSocket; RemoteAddr: TSockAddrIn);
     destructor    Destroy; override;
 
-    property BufferPtr:       PAnsiChar         read GetBufferPtr;
+    property BufferPtr:       PByte             read GetBufferPtr;
     property BufferUsed:      Cardinal          read FBufferUsed write FBufferUsed;
     property BufferFree:      Cardinal          read GetBufferFree;
     property Request:         TDnHttpRequest    read FRequest write FRequest;
@@ -65,8 +65,8 @@ type
     property SentBytes:       Int64             read FSentBytes write FSentBytes;
     property CloseAfterSend:  Boolean           read FCloseAfterSend write FCloseAfterSend;
 
-    property TempBufferPtr:   PByte             read GetTempBufferPtr;
-    property TempBufferSize:  Integer           read GetTempBufferSize;
+    property TempBufferPtr:   PByte            read GetTempBufferPtr;
+    property TempBufferSize:  Integer          read GetTempBufferSize;
   end;
 
 type
@@ -76,7 +76,11 @@ type
   TDnHttpConnectedEvent = procedure (Sender: TObject; Channel: TDnHttpChannel) of object;
   TDnHttpDisconnectedEvent = procedure (Sender: TObject; Channel: TDnHttpChannel) of object;
 
+{$IFDEF ROOTISCOMPONENT}
   TDnHttpServer = class(TComponent)
+{$ELSE}
+  TDnHttpServer = class
+{$ENDIF}
   protected
     FWinsock:         TDnWinsockMgr;
     FListener:        TDnTcpListener;
@@ -137,7 +141,11 @@ type
     function      ProcessFormData (HttpChannel: TDnHttpChannel): Integer;
     procedure     SendBadRequest (HttpChannel: TDnHttpChannel);
   public
+{$IFDEF ROOTISCOMPONENT}
     constructor Create(AOwner: TComponent); override;
+{$ELSE}
+    constructor Create;
+{$ENDIF}
     destructor  Destroy; override;
 
     procedure   SendFile(Channel: TDnHttpChannel; FileName: String);
@@ -190,7 +198,7 @@ begin
   Result := Sizeof(FTempBuffer);
 end;
 
-function TDnHttpChannel.GetBufferPtr: PAnsiChar;
+function TDnHttpChannel.GetBufferPtr: PByte;
 begin
   Result := @FHttpBuffer;
 end;
@@ -225,12 +233,21 @@ begin
   end;
 end;
 
+{$IFDEF ROOTISCOMPONENT}
 constructor TDnHttpServer.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   AllocChain;
   FActive := False;
 end;
+{$ELSE}
+constructor TDnHttpServer.Create;
+begin
+  inherited Create;
+  AllocChain;
+  FActive := False;
+end;
+{$ENDIF}
 
 destructor TDnHttpServer.Destroy;
 begin
@@ -253,11 +270,19 @@ begin
 
   TDnCallbackLogger(FLogger).OnLogMessage := LogMessage;
 
+  {$IFDEF ROOTISCOMPONENT}
   FReactor :=   TDnTcpReactor.Create(Nil);
   FRequestor := TDnTcpRequestor.Create(Nil);
   FListener :=  TDnTcpListener.Create(Nil);
   FExecutor :=  TDnSimpleExecutor.Create(Nil);
   FFileWriter := TDnTcpFileWriter.Create(Nil);
+  {$ELSE}
+  FReactor :=   TDnTcpReactor.Create();
+  FRequestor := TDnTcpRequestor.Create();
+  FListener :=  TDnTcpListener.Create();
+  FExecutor :=  TDnSimpleExecutor.Create();
+  FFileWriter := TDnTcpFileWriter.Create();
+  {$ENDIF}
 
   FListener.OnCreateChannel := Self.ChannelCreate;
   FListener.OnIncoming := Self.ChannelConnected;
@@ -615,7 +640,7 @@ begin
   Result := 0;
 
   // Check if HTTP header is here already
-  CRLFIndex := FindCRLFCRLF(HttpChannel.BufferPtr, HttpChannel.BufferUsed);
+  CRLFIndex := FindCRLFCRLF(PAnsiChar(HttpChannel.BufferPtr), HttpChannel.BufferUsed);
 
   if CRLFIndex = -1 then
     Exit;
@@ -627,7 +652,7 @@ begin
   FLogger.LogMsg(llMandatory, 'Request header is found.');
 
 
-  if not HttpChannel.Request.Parse(HttpChannel.BufferPtr, CRLFIndex + 2) then
+  if not HttpChannel.Request.Parse(PAnsiChar(HttpChannel.BufferPtr), CRLFIndex + 2) then
   begin
     SendBadRequest(HttpChannel);
     Exit;
@@ -671,7 +696,7 @@ begin
   if HttpChannel.BufferUsed < HttpChannel.Request.ContentLength then
     Exit;
 
-  HttpChannel.Request.SaveParametersData(HttpChannel.BufferPtr, HttpChannel.Request.ContentLength);
+  HttpChannel.Request.SaveParametersData(PAnsiChar(HttpChannel.BufferPtr), HttpChannel.Request.ContentLength);
   HttpChannel.Request.ParseParameters(HttpChannel.Request.RawParamData);
 
   // Save result
@@ -699,7 +724,7 @@ begin
 
   TotalProcessed := 0;
   repeat
-    ParseResult := HttpChannel.FormData.Parse(HttpChannel.BufferPtr + TotalProcessed, HttpChannel.Request.ContentLength - TotalProcessed);
+    ParseResult := HttpChannel.FormData.Parse(PAnsiChar(HttpChannel.BufferPtr) + TotalProcessed, HttpChannel.Request.ContentLength - TotalProcessed);
 
     if not ParseResult then
     begin
@@ -738,7 +763,7 @@ begin
   HttpChannel.Response.Clear;
   HttpChannel.Response.AddVersion(HttpChannel.Request.Version);
   HttpChannel.Response.AddResponseCode(400);
-  HttpChannel.Response.AddResponseMsg('Bad Request');
+  HttpChannel.Response.AddResponseMsg(PByte(PAnsiChar('Bad Request')));
   HttpChannel.Response.FinishHeader;
   HttpChannel.CloseAfterSend := True;
 

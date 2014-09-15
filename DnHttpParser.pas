@@ -270,7 +270,7 @@ type
 
   TDnHttpWriter = class
   protected
-    FContent: PAnsiChar;
+    FContent: PByte;
     FContentCapacity, FContentSize: Integer;
     FHeaderSize: Integer;
     FIsLastChunk: Boolean;
@@ -297,14 +297,14 @@ type
     procedure Clear;
     procedure AddVersion(Version: TDnHttpVersion);
     procedure AddResponseCode(Code: Integer);
-    procedure AddResponseMsg(Msg: PAnsiChar);
+    procedure AddResponseMsg(Msg: PByte);
     procedure AddHeader(const HeaderName: PAnsiChar;
       const HeaderValue: PAnsiChar); overload;
     procedure AddHeader(const HeaderName: PAnsiChar; HeaderValue: Integer);
       overload;
     procedure FinishHeader;
 
-    procedure AddContent(const Buffer: PAnsiChar; BufferSize: Integer);
+    procedure AddContent(const Buffer: PByte; BufferSize: Integer);
     procedure Build;
 
     property ChunkedEncoding: Boolean read FHTTPChunkedEncoding write
@@ -1528,7 +1528,7 @@ begin
   QueueBuffer(@FormatResult);
 end;
 
-procedure TDnHttpWriter.AddResponseMsg(Msg: PAnsiChar);
+procedure TDnHttpWriter.AddResponseMsg(Msg: PByte);
 var
   CRLF: PAnsiChar;
 begin
@@ -1590,7 +1590,7 @@ begin
   FHeaderSize := FContentSize;
 end;
 
-procedure TDnHttpWriter.AddContent(const Buffer: PAnsiChar;
+procedure TDnHttpWriter.AddContent(const Buffer: PByte;
   BufferSize: Integer);
 var
   ChunkLength: packed array [0 .. 32] of AnsiChar;
@@ -1641,7 +1641,7 @@ begin
     FContentCapacity := FContentCapacity * 2;
   end;
 
-  Move(Buffer^, FContent[FContentSize], BufferSize);
+  Move(Buffer^, PAnsiChar(FContent)[FContentSize], BufferSize);
   Inc(FContentSize, BufferSize);
 end;
 
