@@ -914,6 +914,9 @@ end;
 
 procedure TCommonMsgClientHandler.InternalExecute;
 begin
+  if not Assigned(FClient) then
+    Exit;
+
   if FClient.FActive and (FClient.FState = cmIdle) then
     FClient.FState := cmResolving
   else
