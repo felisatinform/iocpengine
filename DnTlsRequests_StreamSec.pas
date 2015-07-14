@@ -12,7 +12,7 @@
 unit DnTlsRequests_StreamSec;
 interface
 uses
-  Classes, SysUtils, Windows, WS2,
+  Classes, SysUtils, Windows, WinSock2,
   DnTcpReactor, DnConst, DnInterfaces, DnRtl, DnTcpRequests, DnTcpRequest,
   DnTcpChannel,
   {$ifdef USE_STREAMSEC2}
@@ -391,7 +391,7 @@ begin
   InterlockedIncrement(PendingRequests);
 
   //start sending
-  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := WinSock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   if ResCode <> 0 then
   begin
     ResCode := WSAGetLastError;
@@ -556,7 +556,7 @@ begin
   InterlockedIncrement(PendingRequests);
 
   //start sending
-  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := WinSock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   if ResCode <> 0 then
   begin
     ResCode := WSAGetLastError;
@@ -666,7 +666,7 @@ begin
   InterlockedIncrement(PendingRequests);
 
   //start sending
-  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := WinSock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   if ResCode <> 0 then
   begin
     ResCode := WSAGetLastError;
@@ -720,12 +720,12 @@ var ResCode: Integer;
 begin
   inherited Execute;
   ChannelImpl := TDnTcpChannel(FChannel);
-  WS2.shutdown(ChannelImpl.SocketHandle, SD_SEND); //disable sending
+  WinSock2.shutdown(ChannelImpl.SocketHandle, SD_SEND); //disable sending
   InterlockedIncrement(PendingRequests);
   if not FBrutal then
   begin
     FRead := 0;
-    ResCode := WS2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
+    ResCode := WinSock2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
     if ResCode <> 0 then
     begin
       ResCode := WSAGetLastError;
@@ -913,7 +913,7 @@ begin
   begin //not read yet...
     Inc(FWSABuf.buf, FRead);
     Dec(FWSABuf.len, FRead);
-    ResCode := WS2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
+    ResCode := WinSock2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
     //ResCode := Integer(ReadFileEx(ChannelImpl.SocketHandle, @FWSABuf, FRead, @FContext, Nil));
     if ResCode <> 0 then
     begin
@@ -1085,7 +1085,7 @@ end;
 function  TDnTlsLineRequest.IssueWSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD;
               lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Integer;
 begin
-  Result := WS2.WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
+  Result := WinSock2.WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
 end;
 
 
@@ -1331,7 +1331,7 @@ begin
   //increase the number of pending requests
   InterlockedIncrement(PendingRequests);
 
-  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := WinSock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   if ResCode = 0 then
   begin //WSASend completed immediately
     ;
@@ -1417,7 +1417,7 @@ begin
     FWSABuf.len := FRecordSize - (FRecvStream.Size - 5);
 
   FRead := 0;
-  ResCode := WS2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
+  ResCode := WinSock2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
 
   if ResCode <> 0 then
   begin

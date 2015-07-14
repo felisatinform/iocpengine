@@ -15,7 +15,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  WS2,
+  Winsock2,
   DnConst, DnRtl, DnTcpReactor, DnTcpAbstractRequestor,
   DnTcpRequests, DnTcpChannel, DnTcpRequest, DnDataQueue
 {$IFDEF ENABLE_DECORATOR}
@@ -98,10 +98,10 @@ type
   public
     constructor Create(AOwner: TComponent);override;
     destructor Destroy; override;
-    procedure Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
+    procedure Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; BufSize: Cardinal);
     procedure ReadString(Channel: TDnTcpChannel; Key: Pointer; Size: Integer);
-    procedure RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; MaxSize: Cardinal);
-    procedure Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte;  BufSize: Cardinal);
+    procedure RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; MaxSize: Cardinal);
+    procedure Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar;  BufSize: Cardinal);
     procedure WriteString(Channel: TDnTcpChannel; Key: Pointer; Buf: RawByteString);
     procedure WriteStream(Channel: TDnTcpChannel; Key: Pointer; Stream: TStream);
     //procedure WriteQueue(Channel: TDnTcpChannel; Key: Pointer; Queue: TDnDataQueue);
@@ -146,7 +146,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TDnTcpRequestor.Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
+procedure TDnTcpRequestor.Read(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; BufSize: Cardinal);
 var Request: TDnTcpRequest;
 begin
   if not CheckAvail then
@@ -170,7 +170,7 @@ begin
     Channel.RunRequest(Request);
 end;
 
-procedure TDnTcpRequestor.RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; MaxSize: Cardinal);
+procedure TDnTcpRequestor.RawRead(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; MaxSize: Cardinal);
 var Request: TDnTcpRequest;
 begin
   if not CheckAvail then
@@ -182,7 +182,7 @@ begin
     Channel.RunRequest(Request);
 end;
 
-procedure TDnTcpRequestor.Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PByte; BufSize: Cardinal);
+procedure TDnTcpRequestor.Write(Channel: TDnTcpChannel; Key: Pointer; Buf: PAnsiChar; BufSize: Cardinal);
 var Request: TDnTcpRequest;
 
 begin

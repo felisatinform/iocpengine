@@ -2,7 +2,7 @@
 unit DnHttpServer;
 
 interface
-uses  WS2, Classes, SysUtils, SyncObjs, Windows, contnrs,
+uses  WinSock2, Classes, SysUtils, SyncObjs, Windows, contnrs,
       DnRtl, DnTcpReactor, DnTcpListener, DnTcpRequestor,
       DnAbstractExecutor, DnSimpleExecutor, DnAbstractLogger,
       DnFileLogger, DnWinsockMgr, DnTcpChannel, DnFileCachedLogger,
@@ -41,7 +41,7 @@ type
     FFormData: TDnFormDataParser;
 
     FCloseAfterSend:  Boolean;
-    function GetTempBufferPtr: PByte;
+    function GetTempBufferPtr: PAnsiChar;
     function GetTempBufferSize: Integer;
 
     function GetBufferPtr: PByte;
@@ -65,7 +65,7 @@ type
     property SentBytes:       Int64             read FSentBytes write FSentBytes;
     property CloseAfterSend:  Boolean           read FCloseAfterSend write FCloseAfterSend;
 
-    property TempBufferPtr:   PByte            read GetTempBufferPtr;
+    property TempBufferPtr:   PAnsiChar        read GetTempBufferPtr;
     property TempBufferSize:  Integer          read GetTempBufferSize;
   end;
 
@@ -180,7 +180,7 @@ begin
   inherited Destroy;
 end;
 
-function TDnHttpChannel.GetTempBufferPtr: PByte;
+function TDnHttpChannel.GetTempBufferPtr: PAnsiChar;
 begin
   Result := @FTempBuffer;
 end;
@@ -563,7 +563,7 @@ end;
 
 procedure  TDnHttpServer.SendData(Channel: TDnHttpChannel; Buf: Pointer; BufSize: Integer);
 begin
-  FRequestor.Write(Channel, Nil, PByte(Buf), BufSize);
+  FRequestor.Write(Channel, Nil, PAnsiChar(Buf), BufSize);
 end;
 
 procedure  TDnHttpServer.SendResponse(Channel: TDnHttpChannel);

@@ -13,7 +13,7 @@ unit DnUtils;
 interface
 uses
   Classes, SysUtils, Math,
-  WS2, Windows;
+  WinSock2, Windows;
 
 procedure FreeInterface(Intf: IUnknown);
 
@@ -98,8 +98,8 @@ procedure BuildIPv4Header(var Buf; Length: Integer; SourceAddr, DestAddr: TSockA
 begin
   Hdr.FVersionAndLength := 5 * 16 + 4; // Version 4 and length 5 (20 bytes)
   Hdr.FTOS := 0;
-  Hdr.FTotalLength := WS2.htons(20) + Length + Sizeof(TTcpHeader);
-  Hdr.FFragmentID := WS2.htons(PacketID);
+  Hdr.FTotalLength := WinSock2.htons(20) + Length + Sizeof(TTcpHeader);
+  Hdr.FFragmentID := WinSock2.htons(PacketID);
   Inc(PacketID);
   Hdr.FFragmentBits := 0;
   Hdr.FTTL := 127;

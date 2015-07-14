@@ -10,7 +10,7 @@
 // rights and limitations under the License.
 unit DnTcpWriteFile;
 interface
-uses  Windows, WS2,
+uses  Windows, WinSock2,
       DnRtl, DnConst,
       DnTcpReactor, DnTcpChannel, DnTcpRequest;
 
@@ -125,11 +125,11 @@ begin
     ToRead := FFinishPos - FStartPos + 1 - FTotalWritten;
     if ToRead > Length(FBuffer) then
       ToRead := Length(FBuffer);
-    if ReadFile(FFileHandle, FBuffer[1], Cardinal(ToRead),
+    if ReadFile(FFileHandle, FBuffer[1], NativeUInt(ToRead),
                 WasRead, Nil) = LongBool(True) then
     begin
       FToWrite := WasRead;
-      FEOR := WasRead < Cardinal(Length(FBuffer));
+      FEOR := WasRead < NativeUInt(Length(FBuffer));
       if FEOR and (FTotalWritten + FToWrite < FFinishPos - FStartPos + 1) then
         Result := False
       else
@@ -166,13 +166,13 @@ var ResCode: Integer;
 begin
   inherited Execute;
   ChannelImpl := FChannel as TDnTcpChannel;
-  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := WinSock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   //ResCode := Integer(WriteFileEx(ChannelImpl.SocketHandle, @FWSABuf , FWritten, FContext.FOverlapped, Nil));
   if ResCode = 0 then
   begin //WSASend completed immediately
     //Dec(FWSABuf.len, FWritten);
     //Inc(FWSABuf.buf, FWritten);
-    //PostQueuedCompletionStatus(FChannel.Reactor.PortHandle, FWritten, Cardinal(Pointer(FChannel)), @FContext);
+    //PostQueuedCompletionStatus(FChannel.Reactor.PortHandle, FWritten, NativeUInt(Pointer(FChannel)), @FContext);
   end else
   begin
     ResCode := WSAGetLastError;

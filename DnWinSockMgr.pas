@@ -15,13 +15,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  WS2,
+  Winsock2,
   DnRtl, DnConst;
 
 type
   TDnWinSockMgr = class (TComponent)
   protected
-    FWSAData: TWSAData;
+    FWSAData: Winsock2.TWSAData;
     FNeedUnload: Boolean;
     FActive: Boolean;
 
@@ -58,13 +58,13 @@ begin
   begin
     if not CheckRunningNT4 then
       raise EDnException.Create(ErrRequiresNT4, 0);
-    FNeedUnload := WS2.WSAStartup(MakeWord(2,2), FWSAData) = 0;
+    FNeedUnload := Winsock2.WSAStartup(MakeWord(2,2), FWSAData) = 0;
     FActive := True;
   end else
   if FActive and not Value then
   begin
     if FNeedUnload then
-      WS2.WSACleanup();
+      Winsock2.WSACleanup();
     FNeedUnload := False;
     FActive := False;
   end;

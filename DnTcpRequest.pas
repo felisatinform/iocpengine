@@ -1,7 +1,7 @@
 unit DnTcpRequest;
 interface
 uses Windows, Classes, SysUtils, DnRtl, DnConst,
-  WS2;
+  Winsock2;
 
 const
   GDnIORequestType: array [0..15] of String =
@@ -123,7 +123,7 @@ begin
   ChannelImpl := FChannel as TDnTcpChannel;
 
   if LongBool(PostQueuedCompletionStatus( (ChannelImpl.Reactor as TDnTcpReactor).PortHandle, WasRead,
-                                Cardinal(Pointer(FChannel)), @FContext )) = False
+                                NativeUInt(Pointer(FChannel)), @FContext )) = False
   then
     raise EDnWindowsException.Create(GetLastError());
 end;

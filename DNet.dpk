@@ -89,7 +89,6 @@ contains
   OpenSSLImport in 'OpenSSLImport.pas',
   OpenSSLUtils in 'OpenSSLUtils.pas',
   svcguid in 'svcguid.pas',
-  WS2 in 'WS2.pas',
   DnTlsBox in 'DnTlsBox.pas',
   DnTlsChannel in 'DnTlsChannel.pas';
 

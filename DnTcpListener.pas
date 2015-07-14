@@ -13,7 +13,7 @@
 unit DnTcpListener;
 
 interface
-uses  WS2, Classes, SysUtils, Windows,
+uses  Winsock2, Classes, SysUtils, Windows,
       SyncObjs, DnConst, DnRtl,
       DnAbstractExecutor, DnAbstractLogger,
       DnTcpReactor, DnTcpChannel, DnTcpRequest;
@@ -27,11 +27,11 @@ type
   TDnTcpAcceptRequest = class(TDnTcpRequest)
   protected
     FListener:          TDnTcpListener;
-    FAcceptSocket:      WS2.TSocket;
+    FAcceptSocket:      Winsock2.TSocket;
     FAcceptBuffer:      String;
     FAcceptReceived:    Cardinal;
     FLocalAddr,
-    FRemoteAddr:        WS2.TSockAddrIn;
+    FRemoteAddr:        Winsock2.TSockAddrIn;
     FTransferred:       Cardinal;
     
   public
@@ -145,7 +145,7 @@ begin
   inherited Execute;
   
   //create socket for future channel
-  FAcceptSocket := WS2.WSASocketA(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
+  FAcceptSocket := Winsock2.WSASocketA(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FAcceptSocket = INVALID_SOCKET then
     raise EDnWindowsException.Create(WSAGetLastError());
 
@@ -174,9 +174,9 @@ begin
       LocalAddrLen := Sizeof(TSockAddrIn); RemoteAddrLen := Sizeof(TSockAddrIn);
 
       // UPDATE_ACCEPT_CONTEXT
-      ResCode := WS2.setsockopt(FAcceptSocket, SOL_SOCKET, MY_SO_UPDATE_ACCEPT_CONTEXT, PAnsiChar(@FListener.FSocket), sizeof(FListener.FSocket));
+      ResCode := Winsock2.setsockopt(FAcceptSocket, SOL_SOCKET, MY_SO_UPDATE_ACCEPT_CONTEXT, PAnsiChar(@FListener.FSocket), sizeof(FListener.FSocket));
       if ResCode <> 0 then
-        FListener.FLogger.LogMsg(llMandatory, Format('setSockOpt with SO_UPDATE_ACCEPT_CONTEXT is failed. Error code is %d.', [WS2.WSAGetLastError()]));
+        FListener.FLogger.LogMsg(llMandatory, Format('setSockOpt with SO_UPDATE_ACCEPT_CONTEXT is failed. Error code is %d.', [Winsock2.WSAGetLastError()]));
 
       // Extract addresses
       GetAcceptExSockaddrs(@FAcceptBuffer[1], 0, sizeof(TSockAddrIn)+16,
@@ -341,12 +341,12 @@ begin
   FActive := True;
 
   // Create listening socket
-  FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
+  FSocket := Winsock2.WSASocket(AF_INET, SOCK_STREAM, 0, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FSocket = INVALID_SOCKET then
     raise EDnWindowsException.Create(WSAGetLastError());
   FillChar(FAddr, SizeOf(FAddr), 0);
   FAddr.sin_family := AF_INET;
-  FAddr.sin_port := WS2.htons(FPort);
+  FAddr.sin_port := Winsock2.htons(FPort);
   FAddr.sin_addr.S_addr := inet_addr(PAnsiChar(FAddress));
 
   // Associate with completion port
@@ -357,10 +357,10 @@ begin
   SetSockOpt(FSocket, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@TempBool), SizeOf(TempBool));
 
   // Bind socket
-  if WS2.Bind(TSocket(FSocket), @FAddr, sizeof(FAddr)) = -1 then
+  if Winsock2.Bind(TSocket(FSocket), Winsock2.TSockAddr(FAddr), sizeof(FAddr)) = -1 then
     raise EDnWindowsException.Create(WSAGetLastError());
 
-  if WS2.Listen(FSocket, FBackLog) = -1 then
+  if Winsock2.Listen(FSocket, FBackLog) = -1 then
     raise EDnWindowsException.Create(WSAGetLastError());
 
   // Queue AcceptEx request
@@ -436,8 +436,8 @@ begin
   if FSocket <> INVALID_SOCKET then
   begin
     Sock := FSocket; FSocket := INVALID_SOCKET;
-    WS2.Shutdown(Sock, SD_BOTH); //yes, I known that SD_BOTH is bad idea... But this is LISTENING socket :)
-    WS2.CloseSocket(Sock);
+    Winsock2.Shutdown(Sock, SD_BOTH); //yes, I known that SD_BOTH is bad idea... But this is LISTENING socket :)
+    Winsock2.CloseSocket(Sock);
   end;
   // Wait while acceptex query will finish
   Unlock();

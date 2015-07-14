@@ -19,7 +19,7 @@ uses
   DnAbstractExecutor, DnAbstractLogger,
   DnTcpRequest, DnInterfaces, DnTcpChannel, DnTimerEngine,
   ComObj, ActiveX,
-  WS2;
+  Winsock2;
 
 type
   TDnTcpReactor = class;
@@ -321,17 +321,17 @@ begin
   FChannelPosted := 0;
 
 
-  TempSocket := WS2.socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-  if TempSocket = WS2.INVALID_SOCKET then
+  TempSocket := Winsock2.socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+  if TempSocket = Winsock2.INVALID_SOCKET then
     raise EDnWindowsException.Create(WSAGetLastError());
 
   FPort := CreateIOCompletionPort(TempSocket, 0, 0, 1);
   if FPort = 0 then
   begin
-    WS2.closesocket(TempSocket);
+    Winsock2.closesocket(TempSocket);
     raise EDnWindowsException.Create(GetLastError());
   end;
-  WS2.closesocket(TempSocket);
+  Winsock2.closesocket(TempSocket);
 
   FTimer := TDnTimerEngine.Create(Nil);
   FTimer.TimerSink := Self;
@@ -457,7 +457,7 @@ begin
   FGuard.Acquire;
   try
     // Check at first if such channel exists already
-    if CreateIOCompletionPort(Channel.SocketHandle, FPort, Cardinal(Pointer(Channel)), 1) = 0 then
+    if CreateIOCompletionPort(Channel.SocketHandle, FPort, NativeUInt(Pointer(Channel)), 1) = 0 then
       raise EDnWindowsException.Create(GetLastError());
 
     // Check at first if such channel object is already in
@@ -693,7 +693,7 @@ begin
       Exit;
     if ResCode then
     begin
-      // FReactor.Logger.LogMsg(llCritical, 'Transferred: ' + IntToStr(Transferred) + ', key: ' + IntToStr(Key) + ', Overlapped: ' + IntToStr(Cardinal(Overlapped)));
+      // FReactor.Logger.LogMsg(llCritical, 'Transferred: ' + IntToStr(Transferred) + ', key: ' + IntToStr(Key) + ', Overlapped: ' + IntToStr(NativeUInt(Overlapped)));
     end;
 
     if ResCode then

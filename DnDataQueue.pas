@@ -9,7 +9,7 @@ type
     FSize,
     FCapacity,
     FIncrement:   Integer;
-    FData:        PByte;
+    FData:        PAnsiChar;
     FGuard:       TCriticalSection;
 
     procedure SetSize(NewSize: Integer);
@@ -44,7 +44,7 @@ type
 
     property    Size:  Integer read FSize write SetSize;
     property    Capacity: Integer read FCapacity write FCapacity;
-    property    Memory: PByte read FData;
+    property    Memory: PAnsiChar read FData;
   end;
 
 implementation
@@ -132,7 +132,7 @@ begin
   if Buf <> Nil then
     Move(PAnsiChar(FData)^, PAnsiChar(Buf)^, ToCopy);
   if FSize <> ToCopy then
-    Move(PAnsiChar(Cardinal(FData) + Size)^, PAnsiChar(FData)^, FSize - Size);
+    Move(PAnsiChar(NativeUInt(FData) + Size)^, PAnsiChar(FData)^, FSize - Size);
   
   Dec(FSize, ToCopy);
   Result := ToCopy;

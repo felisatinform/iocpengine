@@ -284,7 +284,7 @@ type
       overload;
     procedure QueueBuffer(const Buffer: PByte); overload;
 
-    function GetContent: PByte;
+    function GetContent: PAnsiChar;
     function GetContentSize: Integer;
 
     function GetHeaderSize: Integer;
@@ -313,7 +313,7 @@ type
       FHTTPContentLength;
     property KeepAlive: Boolean read FHTTPKeepAlive write FHTTPKeepAlive;
 
-    property BufferPtr: PByte read GetContent;
+    property BufferPtr: PAnsiChar read GetContent;
     property BufferSize: Integer read GetContentSize;
 
     property HeaderSize: Integer read GetHeaderSize;
@@ -1650,9 +1650,9 @@ begin
   Self.QueueBuffer(Buffer, StrLen(PAnsiChar(Buffer)));
 end;
 
-function TDnHttpWriter.GetContent: PByte;
+function TDnHttpWriter.GetContent: PAnsiChar;
 begin
-  Result := PByte(PAnsiChar(FContent));
+  Result := PAnsiChar(FContent);
 end;
 
 function TDnHttpWriter.GetContentSize: Integer;

@@ -11,7 +11,7 @@
 unit DnTcpRequests;
 interface
 uses
-  Windows, Classes, SysUtils, Math, WS2,
+  Windows, Classes, SysUtils, Math, Winsock2,
   DnTcpReactor, DnConst, DnRtl, DnTcpRequest, DnTcpChannel, DnDataQueue;
 
 const
@@ -27,7 +27,7 @@ type
     FType: TDnIORequestType;
     FRequest: Pointer;
   end;
-  
+
   IDnTcpCloseHandler = interface
   ['{AB1279A1-BBC9-11d5-BDB9-0000212296FE}']
     procedure DoClose(Context: TDnThreadContext; Channel: TDnTcpChannel; Key: Pointer);
@@ -37,7 +37,7 @@ type
 
   TDnTcpCloseRequest = class (TDnTcpRequest)
   protected
-    FWSABuf:      WSABUF;
+    FWSABuf:      Winsock2.WSABUF;
     FTempBuffer:  RawByteString;
     FRead:        Cardinal;
     FFlags:       Cardinal;
@@ -69,7 +69,7 @@ type
 
   TDnTcpReadRequest = class (TDnTcpRequest)
   protected
-    FWSABuf:  WS2.WSABUF;
+    FWSABuf:  Winsock2.WSABUF;
     FRead:    Cardinal;
     FToRead:  Cardinal;
     FFlags:   Cardinal;
@@ -79,14 +79,14 @@ type
 
   public
     constructor Create( Channel: TDnTcpChannel; Key: Pointer;
-                        Handler: IDnTcpReadHandler; Buf: PByte;
+                        Handler: IDnTcpReadHandler; Buf: PAnsiChar;
                         BufSize: Cardinal; MustAll:  Boolean = True);// overload;
     constructor CreateString( Channel:  TDnTcpChannel; Key: Pointer;
                         Handler: IDnTcpReadHandler; BufSize: Integer;
                         MustAll:  Boolean = True);
     destructor Destroy; override;
     procedure     Init( Channel: TDnTcpChannel; Key: Pointer;
-                    Handler: IDnTcpReadHandler; Buf: PByte;
+                    Handler: IDnTcpReadHandler; Buf: PAnsiChar;
                     BufSize: Cardinal; MustAll: Boolean = True);
 
     procedure     SetTransferred(Transferred: Cardinal); override;
@@ -171,7 +171,7 @@ type
     procedure ReadQueue;
   public
     constructor Create( Channel: TDnTcpChannel; Key: Pointer; Handler: IDnTcpWriteHandler;
-                        Buf: PByte; BufSize: Cardinal);
+                        Buf: PAnsiChar; BufSize: Cardinal);
     constructor CreateString( Channel: TDnTcpChannel; Key: Pointer; Handler: IDnTcpWriteHandler;
                         Buf: RawByteString);
     constructor CreateStream( Channel: TDnTcpChannel; Key: Pointer; Handler: IDnTcpWriteHandler;
@@ -280,7 +280,7 @@ begin
 
   //send 'close completed' packet.
   PostQueuedCompletionStatus((TDnTcpReactor(ChannelImpl.Reactor)).PortHandle, 0,
-                                Cardinal(Pointer(ChannelImpl)), @FContext);
+                                NativeUInt(Pointer(ChannelImpl)), @FContext);
 end;
 
 procedure TDnTcpCloseRequest.ReExecute;
@@ -329,7 +329,7 @@ end;
 //-------------------------------------------------------------------------------------------------
 
 constructor TDnTcpReadRequest.Create( Channel: TDnTcpChannel; Key: Pointer;
-                                      Handler: IDnTcpReadHandler; Buf: PByte;
+                                      Handler: IDnTcpReadHandler; Buf: PAnsiChar;
                                       BufSize: Cardinal; MustAll: Boolean = True );
 begin
   inherited Create(Channel, Key);
@@ -347,7 +347,7 @@ begin
 end;
 
 procedure TDnTcpReadRequest.Init(Channel: TDnTcpChannel; Key: Pointer;
-                                  Handler: IDnTcpReadHandler; Buf: PByte;
+                                  Handler: IDnTcpReadHandler; Buf: PAnsiChar;
                                   BufSize: Cardinal; MustAll: Boolean = True);
 begin
   FWSABuf.Len := BufSize;
@@ -395,14 +395,14 @@ begin
   begin
     AddRef;
     PostQueuedCompletionStatus((ChannelImpl.Reactor as TDnTcpReactor).PortHandle, FRead,
-                                Cardinal(Pointer(ChannelImpl)), @FContext)
+                                NativeUInt(Pointer(ChannelImpl)), @FContext)
   end
   else
   begin //not read yet...
     Inc(FWSABuf.buf, FRead);
     Dec(FWSABuf.len, FRead);
     AddRef;
-    ResCode := WS2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
+    ResCode := Winsock2.WSARecv(ChannelImpl.SocketHandle, @FWSABuf, 1,  FRead, FFlags, @FContext, Nil);
     //ResCode := Integer(ReadFileEx(ChannelImpl.SocketHandle, @FWSABuf, FRead, @FContext, Nil));
     if ResCode <> 0 then
     begin
@@ -545,7 +545,7 @@ end;
 function  TDnTcpLineRequest.IssueWSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD;
               lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Integer;
 begin
-  Result := WS2.WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
+  Result := Winsock2.WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
 end;
 
 
@@ -568,13 +568,13 @@ begin
       ChannelImpl.InsertToCache(PAnsiChar(FWSABuf.buf) + Len, FRead - Len);
       FRead := Len;
       AddRef;
-      PostQueuedCompletionStatus((ChannelImpl.Reactor as TDnTcpReactor).PortHandle, FRead, Cardinal(Pointer(ChannelImpl)), @FContext);
+      PostQueuedCompletionStatus((ChannelImpl.Reactor as TDnTcpReactor).PortHandle, FRead, NativeUInt(Pointer(ChannelImpl)), @FContext);
       //OutputDebugString('PostQueuedCompletionStatus');
     end else
     if FRead <> 0 then
     begin
       AddRef;
-      PostQueuedCompletionStatus((ChannelImpl.Reactor as TDnTcpReactor).PortHandle, FRead, Cardinal(Pointer(ChannelImpl)), @FContext);
+      PostQueuedCompletionStatus((ChannelImpl.Reactor as TDnTcpReactor).PortHandle, FRead, NativeUInt(Pointer(ChannelImpl)), @FContext);
       //OutputDebugString('PostQueuedCompletionStatus');
     end;
   end
@@ -679,7 +679,7 @@ end;
 //-----------------------------------------------------------------------------
 
 constructor TDnTcpWriteRequest.Create(Channel: TDnTcpChannel; Key: Pointer;
-                                      Handler: IDnTcpWriteHandler; Buf: PByte;
+                                      Handler: IDnTcpWriteHandler; Buf: PAnsiChar;
                                       BufSize: Cardinal);
 begin
   inherited Create(Channel, Key);
@@ -811,7 +811,7 @@ begin
   AddRef;
 
   //start I/O
-  ResCode := WS2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
+  ResCode := Winsock2.WSASend(ChannelImpl.SocketHandle, @FWSABuf , 1, FWritten, 0, @FContext, Nil);
   if ResCode = 0 then
   begin //WSASend completed immediately
     ;

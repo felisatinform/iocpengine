@@ -1,7 +1,7 @@
 {$I DnConfig.inc}
 unit DnTcpChannel;
 interface
-uses WS2, contnrs, Windows, Classes, SysUtils,
+uses Winsock2, contnrs, Windows, Classes, SysUtils,
       DnRtl, DnTcpRequest, DnConst, DnAbstractExecutor, DnDataDecorator,
       DnDataQueue;
 
@@ -234,7 +234,7 @@ begin
   inherited Create;
   FRunGuard := TDnMutex.Create;
   FReactor := Reactor;
-  FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
+  FSocket := Winsock2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
   if FSocket = INVALID_SOCKET then
     raise EDnWindowsException.Create(WSAGetLastError());
 
@@ -253,7 +253,7 @@ end;
 constructor TDnTcpChannel.CreateEmpty;
 begin
   inherited Create;
-  FSocket := WS2.INVALID_SOCKET;
+  FSocket := Winsock2.INVALID_SOCKET;
 
   InitChannel;
 end;
@@ -264,11 +264,11 @@ begin
   FRemotePort := RemotePort;
   
   FillChar(FRemoteAddr, 0, SizeOf(FRemoteAddr));
-  FRemoteAddr.sin_addr.S_addr := WS2.inet_addr(PAnsiChar(RemoteIP));
+  FRemoteAddr.sin_addr.S_addr := Winsock2.inet_addr(PAnsiChar(RemoteIP));
   FRemoteAddr.sin_port := htons(RemotePort);
   FRemoteAddr.sin_family := AF_INET;
   FClient := True;
-  FSocket := WS2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
+  FSocket := Winsock2.WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, Nil, 0, WSA_FLAG_OVERLAPPED);
 
   InitChannel;
 end;
@@ -504,8 +504,8 @@ begin
   try
     if FSocket <> INVALID_SOCKET then
     begin
-      WS2.shutdown(FSocket, SD_SEND);
-      WS2.closesocket(FSocket);
+      Winsock2.shutdown(FSocket, SD_SEND);
+      Winsock2.closesocket(FSocket);
       FSocket := INVALID_SOCKET;
     end;
   finally
@@ -522,14 +522,14 @@ end;
 
 function TDnTcpChannel.IsClosed: Boolean;
 begin
-  Result := FSocket = INVALID_SOCKET;
+  Result := FSocket = Winsock2.INVALID_SOCKET;
 end;
 
 procedure TDnTcpChannel.SetNagle(Value: Boolean);
 var Temp: LongBool;
 begin
   Temp := Value;
-  WS2.setsockopt(FSocket, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@Temp), SizeOf(Temp));
+  Winsock2.setsockopt(FSocket, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@Temp), SizeOf(Temp));
 end;
 
 procedure TDnTcpChannel.DeleteRequest(Request: TDnTcpRequest);
@@ -648,7 +648,7 @@ begin
   try
     FRefCount := FRefCount + 1;
     DebugMsg := Format('+  %.10d | Ref. count is %.10d. The type of operation is %s. The comment is %s',
-      [Cardinal(Pointer(Self)), FRefCount, GDnIORequestType[Integer(_Type)], Comment]);
+      [NativeUInt(Pointer(Self)), FRefCount, GDnIORequestType[Integer(_Type)], Comment]);
     //OutputDebugString(PChar(DebugMsg));
   finally
     FRunGuard.Release;
@@ -662,7 +662,7 @@ begin
   try
     FRefCount := FRefCount - 1;
 
-    DebugMsg := Format('-  %.10d | Ref. count is %.10d. The type of operation is %s. The comment is %s', [Cardinal(Pointer(Self)),
+    DebugMsg := Format('-  %.10d | Ref. count is %.10d. The type of operation is %s. The comment is %s', [NativeUInt(Pointer(Self)),
       FRefCount, GDnIORequestType[Integer(_Type)], Comment]);
 
     //OutputDebugString(PChar(DebugMsg));
