@@ -173,7 +173,12 @@ case Encoding of
 end;
 
 type
+{$ifdef WIN64}
+  SslMutexes = array[0..$EFFFFFF] of TCriticalSection;
+{$else WIN64}
   SslMutexes = array[0..$FFFFFFF] of TCriticalSection;
+{$endif WIN64}
+
   PSslMutexes = ^SslMutexes;
 
   TSslMutex = record
