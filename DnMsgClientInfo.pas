@@ -7,7 +7,7 @@ type
   TMsgClientInfo = class
   protected
     FID,                        //Id (uniqe, set by client user)
-    FAddress,                   //socket's IP address visible from the server
+    FAddress,FPort,              //socket's IP address visible from the server
     FUser,                      //(set by client user)
     FPassword,                  //(set by client user)
     FVersion: RawByteString;    //(set by client user)
@@ -19,6 +19,7 @@ type
 
     property ID:        RawByteString read FID write FID;
     property Address:   RawByteString read FAddress write FAddress;
+    property Port:      RawByteString read FPort write FPort ;
     property User:      RawByteString read FUser write FUser;
     property Password:  RawByteString read FPassword write FPassword;
     property Version:   RawByteString read FVersion write FVersion;

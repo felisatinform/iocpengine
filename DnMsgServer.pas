@@ -306,6 +306,7 @@ begin
 
     //save the remote peer address
     Client.Address := Channel.RemoteAddr;
+    Client.Port    := IntToStr(Channel.RemotePort);
 
     //save the channel handle
     Client.Channel := Channel;
@@ -849,6 +850,8 @@ end;
 procedure TCommonMsgServer.DoBufferSent(Client: TClientRec; Buf: PByte; BufSize: Cardinal);
 var MS: TMemoryStream;
 begin
+  MS := nil ;
+
   if Assigned(FOnStreamSent) then
   try
     MS := TMemoryStream.Create;
